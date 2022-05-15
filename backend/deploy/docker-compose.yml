@@ -16,8 +16,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       BACKEND_HOST: 0.0.0.0
       BACKEND_DB_HOST: backend-db
@@ -25,6 +23,7 @@ services:
       BACKEND_DB_USER: backend
       BACKEND_DB_PASS: backend
       BACKEND_DB_BASE: backend
+
   db:
     image: postgres:13
     hostname: backend-db
@@ -45,8 +44,6 @@ services:
       timeout: 3s
       retries: 40
 
-
-
   migrator:
     image: backend:${BACKEND_VERSION:-latest}
     restart: "no"
@@ -60,22 +57,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  redis:
-    image: bitnami/redis:6.2.5
-    hostname: backend-redis
-    restart: always
-    environment:
-      ALLOW_EMPTY_PASSWORD: "yes"
-    healthcheck:
-      test:
-      - CMD
-      - redis-cli
-      - ping
-      interval: 1s
-      timeout: 3s
-      retries: 30
-
 
 volumes:
   backend-db-data:
