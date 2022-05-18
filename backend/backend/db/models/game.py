@@ -26,4 +26,4 @@ class Game(Base):
         nullable=False,
     )
 
-    sales = relationship("Sales", backref="game")
+    sales = relationship("Sale", backref="game", lazy="noload")

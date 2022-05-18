@@ -13,7 +13,6 @@ from backend.settings import settings
 # access to the values within the .ini file in use.
 config = context.config
 
-
 load_all_models()
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

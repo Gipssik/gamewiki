@@ -35,4 +35,4 @@ class Genre(Base):
         nullable=False,
     )
 
-    games = relationship("Game", secondary=game_genre, backref="genres")
+    games = relationship("Game", secondary=game_genre, backref="genres", lazy="noload")

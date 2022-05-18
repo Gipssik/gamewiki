@@ -4,7 +4,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: ./deploy/Dockerfile
+      dockerfile: ./Dockerfile
     image: backend:${BACKEND_VERSION:-latest}
     restart: always
     ports:
@@ -43,6 +43,22 @@ services:
       interval: 2s
       timeout: 3s
       retries: 40
+
+  pgweb:
+    image: sosedoff/pgweb
+    restart: always
+    ports:
+    - "8081:8081"
+    environment:
+    - DATABASE_URL=postgres://${BACKEND_DB_USER}:${BACKEND_DB_PASS}@db:${BACKEND_DB_PORT}/${BACKEND_DB_BASE}?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "10"
+        max-size: "10m"
 
   migrator:
     image: backend:${BACKEND_VERSION:-latest}

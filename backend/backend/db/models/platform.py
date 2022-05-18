@@ -35,5 +35,10 @@ class Platform(Base):
         nullable=False,
     )
 
-    games = relationship("Game", secondary=game_platform, backref="platforms")
-    sales = relationship("Sales", backref="platform")
+    games = relationship(
+        "Game",
+        secondary=game_platform,
+        backref="platforms",
+        lazy="noload",
+    )
+    sales = relationship("Sale", backref="platform", lazy="noload")

@@ -6,7 +6,7 @@ from backend.settings import settings
 def main() -> None:
     """Entrypoint of the application."""
     uvicorn.run(
-        "backend.web.application:get_app",
+        "backend.web.application:app",
         workers=settings.workers_count,
         host=settings.host,
         port=settings.port,

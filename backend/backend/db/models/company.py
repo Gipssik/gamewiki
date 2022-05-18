@@ -21,4 +21,4 @@ class Company(Base):
         nullable=False,
     )
 
-    games = relationship("Game", backref="created_by_company")
+    games = relationship("Game", backref="created_by_company", lazy="noload")

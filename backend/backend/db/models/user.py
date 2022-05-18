@@ -22,8 +22,16 @@ class User(Base):
     )
     salt = sa.Column(sa.String, nullable=False)
 
-    created_companies = relationship("Company", backref="created_by_user")
-    created_platforms = relationship("Platform", backref="created_by_user")
-    created_games = relationship("Game", backref="created_by_user")
-    created_genres = relationship("Genre", backref="created_by_user")
-    created_sales = relationship("Sale", backref="created_by_user")
+    created_companies = relationship(
+        "Company",
+        backref="created_by_user",
+        lazy="noload",
+    )
+    created_platforms = relationship(
+        "Platform",
+        backref="created_by_user",
+        lazy="noload",
+    )
+    created_games = relationship("Game", backref="created_by_user", lazy="noload")
+    created_genres = relationship("Genre", backref="created_by_user", lazy="noload")
+    created_sales = relationship("Sale", backref="created_by_user", lazy="noload")

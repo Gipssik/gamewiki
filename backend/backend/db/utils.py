@@ -6,7 +6,7 @@ from backend.settings import settings
 
 
 async def create_database() -> None:
-    """Create a databse."""
+    """Create a database."""
     db_url = make_url(str(settings.db_url.with_path("/postgres")))
     engine = create_async_engine(db_url, isolation_level="AUTOCOMMIT")
 

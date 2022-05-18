@@ -4,10 +4,11 @@ from typing import Any, Optional
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import ClauseElement, and_
 
+from backend.db import models
 from backend.db.dependencies.db import get_db_session
-from backend.db.models.user import User
 from backend.exceptions import InvalidPasswordException, UserNotFoundException
 from backend.security import hash_password, verify_password
 
@@ -19,8 +20,26 @@ class UserDAO:
 
     def __init__(self, session: AsyncSession = Depends(get_db_session)):
         self.session = session
+        self.default_options = [
+            joinedload(models.User.created_companies).joinedload(models.Company.games),
+            joinedload(models.User.created_games).joinedload(models.Game.sales),
+            joinedload(models.User.created_platforms).joinedload(models.Platform.games),
+            joinedload(models.User.created_sales),
+            joinedload(models.User.created_genres).joinedload(models.Genre.games),
+        ]
+        self.selectin_options = [
+            joinedload(models.User.created_companies).selectinload(
+                models.Company.games,
+            ),
+            joinedload(models.User.created_games).selectinload(models.Game.sales),
+            joinedload(models.User.created_platforms).selectinload(
+                models.Platform.games,
+            ),
+            joinedload(models.User.created_sales),
+            joinedload(models.User.created_genres).selectinload(models.Genre.games),
+        ]
 
-    async def get(self, obj_id: str) -> User:
+    async def get(self, obj_id: str) -> models.User:
         """Get user by id.
 
         Args:
@@ -33,7 +52,15 @@ class UserDAO:
             User: User object.
         """
 
-        db_obj = await self.session.get(User, obj_id)
+        # TODO: Benchmark joinedload vs selectinload
+
+        expr = (
+            select(models.User)
+            .where(models.User.id == obj_id)
+            .options(*self.default_options)
+        )
+        results = await self.session.execute(expr)
+        db_obj = results.scalar()
 
         if not db_obj:
             logger.error(f"User {obj_id} not found")
@@ -47,7 +74,7 @@ class UserDAO:
         expr: Optional[ClauseElement | list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> list[User]:
+    ) -> list[models.User]:
         """Get multiple users.
 
         Args:
@@ -64,14 +91,20 @@ class UserDAO:
         elif isinstance(expr, ClauseElement):
             expr = [expr]
 
-        query = select(User).where(and_(True, *expr)).offset(offset).limit(limit)
+        query = (
+            select(models.User)
+            .where(and_(True, *expr))
+            .offset(offset)
+            .limit(limit)
+            .options(*self.default_options)
+        )
         results = await self.session.execute(query)
-        users = results.scalars().all()
+        users = results.unique().scalars().all()
 
         logger.debug(f"Got {len(users)} users")
         return users
 
-    async def create(self, obj_in: dict[str, Any]) -> User:
+    async def create(self, obj_in: dict[str, Any]) -> models.User:
         """Create user.
 
         Args:
@@ -85,7 +118,7 @@ class UserDAO:
             obj_in["hashed_password"],
         )
 
-        db_obj = User(**obj_in)
+        db_obj = models.User(**obj_in)
         self.session.add(db_obj)
         await self.session.commit()
         await self.session.refresh(db_obj)
@@ -93,7 +126,7 @@ class UserDAO:
         logger.debug(f"Created user {db_obj.username}")
         return db_obj
 
-    async def update(self, obj_in: dict[str, Any], obj_id: str) -> User:
+    async def update(self, obj_in: dict[str, Any], obj_id: str) -> models.User:
         """Update user.
 
         Args:
@@ -132,7 +165,10 @@ class UserDAO:
         await self.session.commit()
         logger.debug(f"Deleted user {db_obj.username}")
 
-    async def get_by_expr(self, expr: ClauseElement | list[ClauseElement]) -> User:
+    async def get_by_expr(
+        self,
+        expr: ClauseElement | list[ClauseElement],
+    ) -> models.User:
         """Get user by expression.
 
         Args:
@@ -148,7 +184,7 @@ class UserDAO:
         if isinstance(expr, ClauseElement):
             expr = [expr]
 
-        query = select(User).where(*expr)
+        query = select(models.User).where(*expr).options(*self.default_options)
         results = await self.session.execute(query)
         user = results.scalar()
 
@@ -159,7 +195,7 @@ class UserDAO:
         logger.debug(f"Got user {user.username}")
         return user
 
-    async def authenticate(self, username: str, password: str) -> User:
+    async def authenticate(self, username: str, password: str) -> models.User:
         """Authenticate user.
 
         Args:
@@ -174,7 +210,7 @@ class UserDAO:
             User: User object.
         """
 
-        user = await self.get_by_expr(User.username == username)
+        user = await self.get_by_expr(models.User.username == username)
 
         if not user:
             logger.error(f"User {username} not found")

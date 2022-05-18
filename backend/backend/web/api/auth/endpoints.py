@@ -36,12 +36,6 @@ async def login_access_token(
             detail=str(error),
         )
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Inactive user",
-        )
-
     return {
         "access_token": create_access_token(str(user.id)),
         "token_type": "Bearer",

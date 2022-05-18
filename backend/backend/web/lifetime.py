@@ -1,12 +1,7 @@
-from asyncio import current_task
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_scoped_session,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.settings import settings
@@ -23,13 +18,10 @@ def _setup_db(app: FastAPI) -> None:
     :param app: fastAPI application.
     """
     engine = create_async_engine(str(settings.db_url), echo=settings.db_echo)
-    session_factory = async_scoped_session(
-        sessionmaker(
-            engine,
-            expire_on_commit=False,
-            class_=AsyncSession,
-        ),
-        scopefunc=current_task,
+    session_factory = sessionmaker(
+        engine,
+        expire_on_commit=False,
+        class_=AsyncSession,
     )
     app.state.db_engine = engine
     app.state.db_session_factory = session_factory

@@ -1,5 +1,6 @@
 from typing import AsyncGenerator
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
@@ -13,10 +14,11 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
     Yields:
         AsyncSession: Database session.
     """
-    session: AsyncSession = request.app.state.db_session_factory()
 
-    try:  # noqa: WPS501
-        yield session
-    finally:
-        await session.commit()
-        await session.close()
+    async with request.app.state.db_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except SQLAlchemyError:
+            await session.rollback()
+            raise

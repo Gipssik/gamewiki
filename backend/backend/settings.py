@@ -18,16 +18,16 @@ class Settings(BaseSettings):
     # quantity of workers for uvicorn
     workers_count: int = 1
     # Enable uvicorn reloading
-    reload: bool = False
+    reload: bool = True
+    db_echo: bool = True
+
+    # Variables from environment
+    secret_key: Optional[str] = None
     db_host: str = "localhost"
     db_port: int = 5432
     db_user: str = "backend"
     db_pass: str = "backend"
     db_base: str = "backend"
-    db_echo: bool = False
-
-    # Variables from environment
-    secret_key: Optional[str] = None
 
     @property
     def db_url(self) -> URL:
