@@ -1,19 +1,31 @@
+import asyncio
+
+import typer
 import uvicorn
 
+from backend.cli import create_primary_user
 from backend.settings import settings
 
+app = typer.Typer()
 
-def main() -> None:
-    """Entrypoint of the application."""
+
+@app.command()
+def runserver() -> None:
+    """Starts the application using settings from 'backend.settings'."""
     uvicorn.run(
         "backend.web.application:app",
         workers=settings.workers_count,
         host=settings.host,
         port=settings.port,
         reload=settings.reload,
-        factory=True,
     )
 
 
+@app.command()
+def createprimaryuser():
+    """Creates a primary user."""
+    asyncio.run(create_primary_user())
+
+
 if __name__ == "__main__":
-    main()
+    app()

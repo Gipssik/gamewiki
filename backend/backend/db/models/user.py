@@ -15,6 +15,8 @@ class User(Base):
     username = sa.Column(sa.String(32), nullable=False, unique=True, index=True)
     email = sa.Column(sa.String, nullable=False, unique=True, index=True)
     hashed_password = sa.Column(sa.String, nullable=False)
+    is_superuser = sa.Column(sa.Boolean, default=False, nullable=False)
+    is_primary = sa.Column(sa.Boolean, default=False, nullable=False)
     created_at = sa.Column(
         sa.DateTime,
         nullable=False,

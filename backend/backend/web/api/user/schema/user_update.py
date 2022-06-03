@@ -6,4 +6,4 @@ from .user_base import UserBase
 
 
 class UserUpdate(UserBase):
-    hashed_password: Optional[str] = Field(None, alias="password")
+    password: Optional[str] = Field(min_length=8)

@@ -122,7 +122,7 @@ async def update_user(
         User: User.
     """
 
-    if user_id != current_user.id and not current_user.is_superuser:
+    if user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to update this user",
@@ -162,7 +162,7 @@ async def delete_user(
         HTTPException: User not found.
     """
 
-    if user_id != current_user.id and not current_user.is_superuser:
+    if user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to delete this user",

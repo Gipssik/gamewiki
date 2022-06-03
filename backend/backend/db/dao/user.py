@@ -2,9 +2,10 @@ import logging
 from typing import Any, Optional
 
 from fastapi import Depends
+from sqlalchemy import true
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import Load, joinedload
 from sqlalchemy.sql.elements import ClauseElement, and_
 
 from backend.db import models
@@ -20,14 +21,14 @@ class UserDAO:
 
     def __init__(self, session: AsyncSession = Depends(get_db_session)):
         self.session = session
-        self.default_options = [
+        self.default_options: list[Load] = [
             joinedload(models.User.created_companies).joinedload(models.Company.games),
             joinedload(models.User.created_games).joinedload(models.Game.sales),
             joinedload(models.User.created_platforms).joinedload(models.Platform.games),
             joinedload(models.User.created_sales),
             joinedload(models.User.created_genres).joinedload(models.Genre.games),
         ]
-        self.selectin_options = [
+        self.selectin_options: list[Load] = [
             joinedload(models.User.created_companies).selectinload(
                 models.Company.games,
             ),
@@ -39,7 +40,7 @@ class UserDAO:
             joinedload(models.User.created_genres).selectinload(models.Genre.games),
         ]
 
-    async def get(self, obj_id: str) -> models.User:
+    async def get(self, obj_id: str) -> models.User | None:
         """Get user by id.
 
         Args:
@@ -49,7 +50,7 @@ class UserDAO:
             UserNotFoundException: User not found.
 
         Returns:
-            User: User object.
+            User | None: User object.
         """
 
         # TODO: Benchmark joinedload vs selectinload
@@ -63,8 +64,7 @@ class UserDAO:
         db_obj = results.scalar()
 
         if not db_obj:
-            logger.error(f"User {obj_id} not found")
-            raise UserNotFoundException(f"User {obj_id} not found")
+            return None
 
         logger.debug(f"Got user {db_obj.username}")
         return db_obj
@@ -115,8 +115,9 @@ class UserDAO:
         """
 
         obj_in["hashed_password"], obj_in["salt"] = hash_password(
-            obj_in["hashed_password"],
+            obj_in["password"],
         )
+        obj_in.pop("password", None)
 
         db_obj = models.User(**obj_in)
         self.session.add(db_obj)
@@ -138,9 +139,13 @@ class UserDAO:
         """
 
         db_obj = await self.get(obj_id)
+        if not db_obj:
+            logger.error(f"User {obj_id} not found")
+            raise UserNotFoundException(obj_id)
 
-        if "hashed_password" in obj_in:
-            hashed_password, salt = hash_password(obj_in["hashed_password"])
+        if "password" in obj_in:
+            hashed_password, salt = hash_password(obj_in["password"])
+            obj_in.pop("password", None)
             obj_in.update({"hashed_password": hashed_password, "salt": salt})
 
         for field in obj_in:
@@ -161,6 +166,10 @@ class UserDAO:
         """
 
         db_obj = await self.get(obj_id)
+        if not db_obj:
+            logger.error(f"User {obj_id} not found")
+            raise UserNotFoundException(obj_id)
+
         await self.session.delete(db_obj)
         await self.session.commit()
         logger.debug(f"Deleted user {db_obj.username}")
@@ -168,7 +177,7 @@ class UserDAO:
     async def get_by_expr(
         self,
         expr: ClauseElement | list[ClauseElement],
-    ) -> models.User:
+    ) -> models.User | None:
         """Get user by expression.
 
         Args:
@@ -178,7 +187,7 @@ class UserDAO:
             UserNotFoundException: User not found.
 
         Returns:
-            User: User object.
+            User | None: User object.
         """
 
         if isinstance(expr, ClauseElement):
@@ -189,8 +198,7 @@ class UserDAO:
         user = results.scalar()
 
         if not user:
-            logger.error(f"User not found")
-            raise UserNotFoundException(f"User not found")
+            return None
 
         logger.debug(f"Got user {user.username}")
         return user
@@ -221,4 +229,19 @@ class UserDAO:
             raise InvalidPasswordException(f"User {username} password incorrect")
 
         logger.debug(f"Authenticated user {username}")
+        return user
+
+    async def get_primary_user(self) -> models.User | None:
+        """Get primary user.
+
+        Returns:
+            User | None: User object.
+        """
+
+        user = await self.get_by_expr(models.User.is_primary == true())
+
+        if not user:
+            return None
+
+        logger.debug(f"Got primary user {user.username}")
         return user

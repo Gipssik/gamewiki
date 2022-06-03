@@ -18,4 +18,4 @@ RUN poetry install
 COPY . /app/src/
 RUN poetry install
 
-CMD ["/usr/local/bin/python", "-m", "backend"]
+CMD ["/usr/local/bin/python", "-m", "backend", "runserver"]
