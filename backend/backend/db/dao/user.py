@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from fastapi import Depends
-from sqlalchemy import true
+from sqlalchemy import delete, true
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import Load, joinedload
@@ -10,8 +10,13 @@ from sqlalchemy.sql.elements import ClauseElement, and_
 
 from backend.db import models
 from backend.db.dependencies.db import get_db_session
-from backend.exceptions import InvalidPasswordException, UserNotFoundException
+from backend.exceptions import (
+    InvalidPasswordException,
+    UserIsPrimaryException,
+    UserNotFoundException,
+)
 from backend.security import hash_password, verify_password
+from backend.types.user import CreatedAtOrder
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +51,6 @@ class UserDAO:
         Args:
             obj_id (str): ID of user to get.
 
-        Raises:
-            UserNotFoundException: User not found.
-
         Returns:
             User | None: User object.
         """
@@ -74,6 +76,7 @@ class UserDAO:
         expr: Optional[ClauseElement | list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
+        created_at_order: Optional[CreatedAtOrder] = CreatedAtOrder.DESC,
     ) -> list[models.User]:
         """Get multiple users.
 
@@ -81,6 +84,7 @@ class UserDAO:
             expr (Optional[ClauseElement | list[ClauseElement]]): Filter expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
+            created_at_order (Optional[str]): Order by created_at.
 
         Returns:
             list[User]: List of users.
@@ -91,11 +95,17 @@ class UserDAO:
         elif isinstance(expr, ClauseElement):
             expr = [expr]
 
+        order = (
+            models.User.created_at.desc()
+            if created_at_order == CreatedAtOrder.DESC
+            else models.User.created_at.asc()
+        )
         query = (
             select(models.User)
             .where(and_(True, *expr))
             .offset(offset)
             .limit(limit)
+            .order_by(order)
             .options(*self.default_options)
         )
         results = await self.session.execute(query)
@@ -170,9 +180,24 @@ class UserDAO:
             logger.error(f"User {obj_id} not found")
             raise UserNotFoundException(obj_id)
 
+        if db_obj.is_primary:
+            logger.error(f"Cannot delete primary user {obj_id}")
+            raise UserIsPrimaryException(obj_id)
+
         await self.session.delete(db_obj)
-        await self.session.commit()
         logger.debug(f"Deleted user {db_obj.username}")
+
+    async def delete_multi(self, obj_ids: list[str]) -> None:
+        """Delete multiple users.
+
+        Args:
+            obj_ids (list[str]): IDs of users to delete.
+        """
+
+        stmt = delete(models.User).where(
+            models.User.id.in_(obj_ids) & models.User.is_primary.is_(False),
+        )
+        await self.session.execute(stmt)
 
     async def get_by_expr(
         self,
@@ -182,9 +207,6 @@ class UserDAO:
 
         Args:
             expr (ClauseElement | list[ClauseElement]): Expression(s).
-
-        Raises:
-            UserNotFoundException: User not found.
 
         Returns:
             User | None: User object.

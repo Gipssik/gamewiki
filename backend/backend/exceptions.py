@@ -1,8 +1,10 @@
 class UserNotFoundException(Exception):
-    def __init__(self, message: str):
-        super().__init__(message)
+    """Raised when a user is not found in the database"""
 
 
 class InvalidPasswordException(Exception):
-    def __init__(self, message: str):
-        super().__init__(message)
+    """Raised when an invalid password is provided"""
+
+
+class UserIsPrimaryException(Exception):
+    """Raised when a user is trying to delete a primary user"""

@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 from backend.db.dao.user import UserDAO
 from backend.db.models.user import User
-from backend.exceptions import UserNotFoundException
 from backend.settings import settings
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"/api/auth/access-token")
@@ -43,10 +42,31 @@ async def get_current_user(
             detail="Could not validate credentials",
         )
 
-    try:
-        return await user_dao.get(token_data["sub"])
-    except UserNotFoundException as error:
+    user = await user_dao.get(token_data["sub"])
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
-        ) from error
+        )
+    return user
+
+
+async def get_current_superuser(current_user: User = Depends(get_current_user)) -> User:
+    """Get current superuser.
+
+    Args:
+        current_user (User): Current user.
+
+    Raises:
+        HTTPException: User is not superuser.
+
+    Returns:
+        User: Current superuser.
+    """
+
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed",
+        )
+    return current_user
