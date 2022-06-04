@@ -4,7 +4,7 @@ from jose import jwt
 from jose.exceptions import JWTError
 from pydantic import ValidationError
 
-from backend.db.dao.user import UserDAO
+from backend.db.dao import UserDAO
 from backend.db.models.user import User
 from backend.settings import settings
 

@@ -60,20 +60,6 @@ services:
         max-file: "10"
         max-size: "10m"
 
-  migrator:
-    image: backend:${BACKEND_VERSION:-latest}
-    restart: "no"
-    command: alembic upgrade head
-    environment:
-      BACKEND_DB_HOST: backend-db
-      BACKEND_DB_PORT: 5432
-      BACKEND_DB_USER: backend
-      BACKEND_DB_PASS: backend
-      BACKEND_DB_BASE: backend
-    depends_on:
-      db:
-        condition: service_healthy
-
 volumes:
   backend-db-data:
     name: backend-db-data

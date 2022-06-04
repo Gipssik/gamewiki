@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.db.dao.user import UserDAO
+from backend.db.dao import UserDAO
 from backend.db.dependencies.user import get_current_user
 from backend.db.models.user import User
 from backend.exceptions import InvalidPasswordException, UserNotFoundException

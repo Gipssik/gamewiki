@@ -7,25 +7,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import Load, joinedload
 from sqlalchemy.sql.elements import ClauseElement, and_
+from sqlalchemy.sql.functions import count
 
 from backend.db import models
+from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
+from backend.db.utils import get_db_order
 from backend.exceptions import (
     InvalidPasswordException,
     UserIsPrimaryException,
     UserNotFoundException,
 )
 from backend.security import hash_password, verify_password
-from backend.types.user import CreatedAtOrder
+from backend.types import Order, OrderColumn
 
 logger = logging.getLogger(__name__)
 
 
-class UserDAO:
+class UserDAO(BaseDAO[models.User]):
     """Class for accessing user table"""
 
-    def __init__(self, session: AsyncSession = Depends(get_db_session)):
-        self.session = session
+    def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
+        super().__init__(models.User, session)
         self.default_options: list[Load] = [
             joinedload(models.User.created_companies).joinedload(models.Company.games),
             joinedload(models.User.created_games).joinedload(models.Game.sales),
@@ -45,157 +48,146 @@ class UserDAO:
             joinedload(models.User.created_genres).selectinload(models.Genre.games),
         ]
 
-    async def get(self, obj_id: str) -> models.User | None:
-        """Get user by id.
-
-        Args:
-            obj_id (str): ID of user to get.
-
-        Returns:
-            User | None: User object.
-        """
-
-        # TODO: Benchmark joinedload vs selectinload
-
-        expr = (
-            select(models.User)
-            .where(models.User.id == obj_id)
-            .options(*self.default_options)
-        )
-        results = await self.session.execute(expr)
-        db_obj = results.scalar()
-
-        if not db_obj:
-            return None
-
-        logger.debug(f"Got user {db_obj.username}")
-        return db_obj
-
-    async def get_multi(
+    async def get_ordered_multi(
         self,
-        expr: Optional[ClauseElement | list[ClauseElement]] = None,
+        expr: Optional[list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        created_at_order: Optional[CreatedAtOrder] = CreatedAtOrder.DESC,
+        created_at_order: Optional[Order] = Order.DESC,
+        extra_orders: Optional[list[OrderColumn]] = None,
     ) -> list[models.User]:
         """Get multiple users.
 
         Args:
-            expr (Optional[ClauseElement | list[ClauseElement]]): Filter expression.
+            expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
-            created_at_order (Optional[str]): Order by created_at.
+            created_at_order (Optional[Order]): Created at order.
+            extra_orders (Optional[list[OrderColumn]]): Extra orders.
 
         Returns:
-            list[User]: List of users.
+            list[models.User]: Users.
         """
 
         if expr is None:
             expr = []
-        elif isinstance(expr, ClauseElement):
-            expr = [expr]
 
-        order = (
-            models.User.created_at.desc()
-            if created_at_order == CreatedAtOrder.DESC
-            else models.User.created_at.asc()
-        )
-        query = (
+        orders_list = [get_db_order(created_at_order)(models.User.created_at)]  # noqa
+        extra_ordering_columns = []
+
+        if extra_orders is not None:
+            for extra_order in extra_orders:
+                extra_ordering_column = getattr(models.User, extra_order.column.value)
+                prop = count(extra_ordering_column)
+                order = get_db_order(extra_order.order)(prop)
+                orders_list.insert(-1, order)
+                extra_ordering_columns.append(extra_ordering_column)
+
+        print(orders_list)
+        print(extra_ordering_columns)
+
+        stmt = (
             select(models.User)
             .where(and_(True, *expr))
             .offset(offset)
             .limit(limit)
-            .order_by(order)
+            .order_by(*orders_list)
             .options(*self.default_options)
         )
-        results = await self.session.execute(query)
-        users = results.unique().scalars().all()
 
-        logger.debug(f"Got {len(users)} users")
-        return users
+        if extra_orders is not None:
+            for x in extra_ordering_columns:
+                stmt = stmt.outerjoin(x)
+            stmt = stmt.group_by(models.User)
 
-    async def create(self, obj_in: dict[str, Any]) -> models.User:
+        results = await self.session.execute(stmt)
+        objects = results.unique().scalars().all()
+
+        logger.debug(f"Got {len(objects)} {models.User.__tablename__}")
+        return objects
+
+    async def create(self, user_in: dict[str, Any]) -> models.User:
         """Create user.
 
         Args:
-            obj_in (dict[str, Any]): User data.
+            user_in (dict[str, Any]): User data.
 
         Returns:
             User: User object.
         """
 
-        obj_in["hashed_password"], obj_in["salt"] = hash_password(
-            obj_in["password"],
+        user_in["hashed_password"], user_in["salt"] = hash_password(
+            user_in["password"],
         )
-        obj_in.pop("password", None)
+        user_in.pop("password", None)
 
-        db_obj = models.User(**obj_in)
-        self.session.add(db_obj)
+        db_user = models.User(**user_in)
+        self.session.add(db_user)
         await self.session.commit()
-        await self.session.refresh(db_obj)
+        await self.session.refresh(db_user)
 
-        logger.debug(f"Created user {db_obj.username}")
-        return db_obj
+        logger.debug(f"Created user {db_user.username}")
+        return db_user
 
-    async def update(self, obj_in: dict[str, Any], obj_id: str) -> models.User:
+    async def update(self, user_in: dict[str, Any], user_id: str) -> models.User:
         """Update user.
 
         Args:
-            obj_in (dict[str, Any]): User data.
-            obj_id (str): ID of user to update.
+            user_in (dict[str, Any]): User data.
+            user_id (str): ID of user to update.
 
         Returns:
             User: User object.
         """
 
-        db_obj = await self.get(obj_id)
-        if not db_obj:
-            logger.error(f"User {obj_id} not found")
-            raise UserNotFoundException(obj_id)
+        db_user = await self.get(user_id)
+        if not db_user:
+            logger.error(f"User {user_id} not found")
+            raise UserNotFoundException(user_id)
 
-        if "password" in obj_in:
-            hashed_password, salt = hash_password(obj_in["password"])
-            obj_in.pop("password", None)
-            obj_in.update({"hashed_password": hashed_password, "salt": salt})
+        if "password" in user_in:
+            hashed_password, salt = hash_password(user_in["password"])
+            user_in.pop("password", None)
+            user_in.update({"hashed_password": hashed_password, "salt": salt})
 
-        for field in obj_in:
-            setattr(db_obj, field, obj_in[field])
+        for field in user_in:
+            setattr(db_user, field, user_in[field])
 
-        self.session.add(db_obj)
+        self.session.add(db_user)
         await self.session.commit()
-        await self.session.refresh(db_obj)
+        await self.session.refresh(db_user)
 
-        logger.debug(f"Updated user {db_obj.username}")
-        return db_obj
+        logger.debug(f"Updated user {db_user.username}")
+        return db_user
 
-    async def delete(self, obj_id: str) -> None:
+    async def delete(self, user_id: str) -> None:
         """Delete user.
 
         Args:
-            obj_id (str): ID of user to delete.
+            user_id (str): ID of user to delete.
         """
 
-        db_obj = await self.get(obj_id)
-        if not db_obj:
-            logger.error(f"User {obj_id} not found")
-            raise UserNotFoundException(obj_id)
+        db_user = await self.get(user_id)
+        if not db_user:
+            logger.error(f"User {user_id} not found")
+            raise UserNotFoundException(user_id)
 
-        if db_obj.is_primary:
-            logger.error(f"Cannot delete primary user {obj_id}")
-            raise UserIsPrimaryException(obj_id)
+        if db_user.is_primary:
+            logger.error(f"Cannot delete primary user {user_id}")
+            raise UserIsPrimaryException(user_id)
 
-        await self.session.delete(db_obj)
-        logger.debug(f"Deleted user {db_obj.username}")
+        await self.session.delete(db_user)
+        logger.debug(f"Deleted user {db_user.username}")
 
-    async def delete_multi(self, obj_ids: list[str]) -> None:
+    async def delete_multi(self, user_ids: list[str]) -> None:
         """Delete multiple users.
 
         Args:
-            obj_ids (list[str]): IDs of users to delete.
+            user_ids (list[str]): IDs of users to delete.
         """
 
         stmt = delete(models.User).where(
-            models.User.id.in_(obj_ids) & models.User.is_primary.is_(False),
+            models.User.id.in_(user_ids) & models.User.is_primary.is_(False),
         )
         await self.session.execute(stmt)
 
@@ -215,8 +207,8 @@ class UserDAO:
         if isinstance(expr, ClauseElement):
             expr = [expr]
 
-        query = select(models.User).where(*expr).options(*self.default_options)
-        results = await self.session.execute(query)
+        stmt = select(models.User).where(*expr).options(*self.default_options)
+        results = await self.session.execute(stmt)
         user = results.scalar()
 
         if not user:

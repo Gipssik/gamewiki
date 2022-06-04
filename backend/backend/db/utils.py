@@ -1,8 +1,10 @@
-from sqlalchemy import text
+from sqlalchemy import asc, desc, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.sql.elements import UnaryExpression
 
 from backend.settings import settings
+from backend.types import Order
 
 
 async def create_database() -> None:
@@ -42,3 +44,7 @@ async def drop_database() -> None:
         )
         await conn.execute(text(disc_users))
         await conn.execute(text(f'DROP DATABASE "{settings.db_base}"'))
+
+
+def get_db_order(order: Order) -> UnaryExpression:
+    return desc if order == Order.DESC else asc

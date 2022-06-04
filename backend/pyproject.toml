@@ -42,9 +42,9 @@ pytest-cov = "^3.0.0"
 anyio = "^3.5.0"
 pytest-env = "^0.6.2"
 requests = "^2.26.0"
-httpx = "^0.22.0"
 types-python-jose = "^3.3.0"
 types-passlib = "^1.7.5"
+sqlalchemy2-stubs = "^0.0.2-alpha.23"
 
 
 [tool.isort]

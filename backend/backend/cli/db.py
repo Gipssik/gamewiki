@@ -4,7 +4,7 @@ from typing import Callable
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.db.dao.user import UserDAO
+from backend.db.dao import UserDAO
 from backend.settings import settings
 from backend.web.api.user.schema.user_create import UserCreate
 

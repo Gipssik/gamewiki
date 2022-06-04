@@ -3,10 +3,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
-from backend.db.dao.user import UserDAO
+from backend.db.dao import UserDAO
 from backend.db.dependencies.user import get_current_superuser, get_current_user
 from backend.db.models.user import User
 from backend.exceptions import UserIsPrimaryException, UserNotFoundException
+from backend.types import OrderColumn
 from backend.web.api.user import schema
 from backend.web.api.user.schema import UserQueries
 from backend.web.api.user.schema.user import User as UserSchema
@@ -29,20 +30,27 @@ async def get_users(
         list[User]: List of users.
     """
 
-    expression_dict = {
+    filters_dict = {
         "username": User.username.ilike(f"%{queries.username}%"),
         "email": User.email.ilike(f"%{queries.email}%"),
         "is_superuser": User.is_superuser == queries.is_superuser,
         "is_primary": User.is_primary == queries.is_primary,
     }
-    qs = queries.dict(exclude_none=True, exclude={"skip", "limit", "created_at_order"})
-    queries_list = [expression_dict[key] for key in qs.keys()]
+    filters = queries.dict(
+        exclude_none=True,
+        exclude={"skip", "limit", "created_at_order", "extra_orders"},
+    )
+    filters_list = [filters_dict[key] for key in filters.keys()]
 
-    return await user_dao.get_multi(
-        expr=queries_list,
+    orders = dict([x.split("__") for x in queries.extra_orders])  # type: ignore
+    extra_orders = [OrderColumn(column=k, order=v) for k, v in orders.items()]
+
+    return await user_dao.get_ordered_multi(
+        expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
         created_at_order=queries.created_at_order,
+        extra_orders=extra_orders,
     )
 
 
