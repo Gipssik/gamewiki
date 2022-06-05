@@ -13,13 +13,9 @@ from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
 from backend.db.utils import get_db_order
-from backend.exceptions import (
-    InvalidPasswordException,
-    UserIsPrimaryException,
-    UserNotFoundException,
-)
+from backend.exceptions import InvalidPasswordException, UserNotFoundException
 from backend.security import hash_password, verify_password
-from backend.types import Order, OrderColumn
+from backend.types import Order, UserOrderColumn
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +26,19 @@ class UserDAO(BaseDAO[models.User]):
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         super().__init__(models.User, session)
         self.default_options: list[Load] = [
-            joinedload(models.User.created_companies).joinedload(models.Company.games),
-            joinedload(models.User.created_games).joinedload(models.Game.sales),
-            joinedload(models.User.created_platforms).joinedload(models.Platform.games),
-            joinedload(models.User.created_sales),
-            joinedload(models.User.created_genres).joinedload(models.Genre.games),
-        ]
-        self.selectin_options: list[Load] = [
-            joinedload(models.User.created_companies).selectinload(
-                models.Company.games,
+            joinedload(models.User.created_companies).options(
+                joinedload(models.Company.games),
             ),
-            joinedload(models.User.created_games).selectinload(models.Game.sales),
-            joinedload(models.User.created_platforms).selectinload(
-                models.Platform.games,
+            joinedload(models.User.created_games).options(
+                joinedload(models.Game.sales),
+            ),
+            joinedload(models.User.created_platforms).options(
+                joinedload(models.Platform.games),
             ),
             joinedload(models.User.created_sales),
-            joinedload(models.User.created_genres).selectinload(models.Genre.games),
+            joinedload(models.User.created_genres).options(
+                joinedload(models.Genre.games),
+            ),
         ]
 
     async def get_ordered_multi(
@@ -54,7 +47,7 @@ class UserDAO(BaseDAO[models.User]):
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
         created_at_order: Optional[Order] = Order.DESC,
-        extra_orders: Optional[list[OrderColumn]] = None,
+        extra_orders: Optional[list[UserOrderColumn]] = None,
     ) -> list[models.User]:
         """Get multiple users.
 
@@ -63,7 +56,7 @@ class UserDAO(BaseDAO[models.User]):
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
             created_at_order (Optional[Order]): Created at order.
-            extra_orders (Optional[list[OrderColumn]]): Extra orders.
+            extra_orders (Optional[list[UserOrderColumn]]): Extra orders.
 
         Returns:
             list[models.User]: Users.
@@ -83,9 +76,6 @@ class UserDAO(BaseDAO[models.User]):
                 orders_list.insert(-1, order)
                 extra_ordering_columns.append(extra_ordering_column)
 
-        print(orders_list)
-        print(extra_ordering_columns)
-
         stmt = (
             select(models.User)
             .where(and_(True, *expr))
@@ -101,10 +91,10 @@ class UserDAO(BaseDAO[models.User]):
             stmt = stmt.group_by(models.User)
 
         results = await self.session.execute(stmt)
-        objects = results.unique().scalars().all()
+        users = results.unique().scalars().all()
 
-        logger.debug(f"Got {len(objects)} {models.User.__tablename__}")
-        return objects
+        logger.debug(f"Got {len(users)} users")
+        return users
 
     async def create(self, user_in: dict[str, Any]) -> models.User:
         """Create user.
@@ -167,17 +157,17 @@ class UserDAO(BaseDAO[models.User]):
             user_id (str): ID of user to delete.
         """
 
-        db_user = await self.get(user_id)
-        if not db_user:
-            logger.error(f"User {user_id} not found")
-            raise UserNotFoundException(user_id)
+        stmt = (
+            delete(models.User)
+            .where(
+                (models.User.id == user_id) & models.User.is_primary.is_(False),
+            )
+            .returning(models.User.id)
+        )
 
-        if db_user.is_primary:
-            logger.error(f"Cannot delete primary user {user_id}")
-            raise UserIsPrimaryException(user_id)
-
-        await self.session.delete(db_user)
-        logger.debug(f"Deleted user {db_user.username}")
+        result = await self.session.execute(stmt)
+        result.unique().scalar_one()
+        logger.debug(f"Deleted user {user_id}")
 
     async def delete_multi(self, user_ids: list[str]) -> None:
         """Delete multiple users.
@@ -186,9 +176,21 @@ class UserDAO(BaseDAO[models.User]):
             user_ids (list[str]): IDs of users to delete.
         """
 
-        stmt = delete(models.User).where(
-            models.User.id.in_(user_ids) & models.User.is_primary.is_(False),
+        stmt = (
+            delete(models.User)
+            .where(
+                models.User.id.in_(user_ids) & models.User.is_primary.is_(False),
+            )
+            .returning(models.User.id)
         )
+        results = await self.session.execute(stmt)
+        users = results.scalars().all()
+
+        if len(users) != len(user_ids):
+            intersection = set(user_ids) - {str(x) for x in users}
+            logger.error(f"Some users not found: {intersection}")
+            raise UserNotFoundException(f"{', '.join(intersection)}")
+
         await self.session.execute(stmt)
 
     async def get_by_expr(

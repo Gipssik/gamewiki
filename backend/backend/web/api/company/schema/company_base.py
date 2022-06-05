@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel
@@ -6,4 +6,4 @@ from pydantic import BaseModel
 
 class CompanyBase(BaseModel):
     title: Optional[str]
-    founded_at: Optional[datetime]
+    founded_at: Optional[date]

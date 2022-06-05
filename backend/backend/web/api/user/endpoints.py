@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from backend.db.dao import UserDAO
 from backend.db.dependencies.user import (
@@ -10,19 +10,18 @@ from backend.db.dependencies.user import (
     validate_extra_orders,
 )
 from backend.db.models.user import User
-from backend.exceptions import UserIsPrimaryException, UserNotFoundException
-from backend.types import OrderColumn
+from backend.exceptions import UserNotFoundException
+from backend.types import UserOrderColumn
 from backend.web.api.user import schema
-from backend.web.api.user.schema import UserQueries
 from backend.web.api.user.schema.user import User as UserSchema
 
 router = APIRouter()
 
 
 @router.get("/", response_model=list[UserSchema])
-async def get_users(
-    queries: UserQueries = Depends(),
-    extra_orders: list[str] = Depends(validate_extra_orders),
+async def get_multi(
+    queries: schema.UserQueries = Depends(),
+    extra_orders: list[UserOrderColumn] = Depends(validate_extra_orders),
     user_dao: UserDAO = Depends(),
 ) -> list[User]:
     """Get list of users.
@@ -48,20 +47,17 @@ async def get_users(
     )
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    orders = dict([x.split("__") for x in extra_orders])  # type: ignore
-    extras = [OrderColumn(column=k, order=v) for k, v in orders.items()]
-
     return await user_dao.get_ordered_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
         created_at_order=queries.created_at_order,
-        extra_orders=extras,
+        extra_orders=extra_orders,
     )
 
 
 @router.get("/me", response_model=UserSchema)
-async def get_user_me(current_user: User = Depends(get_current_user)) -> User:
+async def get_me(current_user: User = Depends(get_current_user)) -> User:
     """Get current user.
 
     Args:
@@ -75,7 +71,7 @@ async def get_user_me(current_user: User = Depends(get_current_user)) -> User:
 
 
 @router.get("/{user_id}", response_model=UserSchema)
-async def get_user(user_id: UUID, user_dao: UserDAO = Depends()) -> User:
+async def get(user_id: UUID, user_dao: UserDAO = Depends()) -> User:
     """Get user by id.
 
     Args:
@@ -96,7 +92,7 @@ async def get_user(user_id: UUID, user_dao: UserDAO = Depends()) -> User:
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserSchema)
-async def create_user(user: schema.UserCreate, user_dao: UserDAO = Depends()) -> User:
+async def create(user: schema.UserCreate, user_dao: UserDAO = Depends()) -> User:
     """Create new user.
 
     Args:
@@ -122,7 +118,7 @@ async def create_user(user: schema.UserCreate, user_dao: UserDAO = Depends()) ->
 
 
 @router.patch("/{user_id}", response_model=UserSchema)
-async def update_user(
+async def update(
     user_id: UUID,
     user: schema.UserUpdate,
     user_dao: UserDAO = Depends(),
@@ -168,7 +164,7 @@ async def update_user(
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_users(
+async def delete_multi(
     user_ids: list[UUID],
     user_dao: UserDAO = Depends(),
     current_user: User = Depends(get_current_superuser),
@@ -187,11 +183,17 @@ async def delete_users(
         None: None.
     """
 
-    await user_dao.delete_multi([str(user_id) for user_id in user_ids])
+    try:
+        await user_dao.delete_multi([str(user_id) for user_id in user_ids])
+    except UserNotFoundException as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User(s) not found: {str(error)}",
+        ) from error
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(
+async def delete(
     user_id: UUID,
     user_dao: UserDAO = Depends(),
     current_user: User = Depends(get_current_user),
@@ -216,13 +218,8 @@ async def delete_user(
 
     try:
         await user_dao.delete(str(user_id))
-    except UserNotFoundException as error:
+    except NoResultFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
-        ) from error
-    except UserIsPrimaryException as error:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not allowed to delete this user",
         ) from error

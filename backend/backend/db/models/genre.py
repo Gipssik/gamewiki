@@ -35,4 +35,14 @@ class Genre(Base):
         nullable=False,
     )
 
-    games = relationship("Game", secondary=game_genre, backref="genres", lazy="noload")
+    games = relationship(
+        "Game",
+        secondary=game_genre,
+        back_populates="genres",
+        lazy="noload",
+    )
+    created_by_user = relationship(
+        "User",
+        back_populates="created_genres",
+        lazy="joined",
+    )

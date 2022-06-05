@@ -18,8 +18,18 @@ class UserOrderColumns(str, Enum):
     CREATED_SALES_ORDER = "created_sales"
 
 
-class OrderColumn(BaseModel):
+class UserOrderColumn(BaseModel):
     column: UserOrderColumns
+    order: Order
+
+
+class CompanyOrderColumns(str, Enum):
+    FOUNDED_AT = "founded_at"
+    CREATED_AT = "created_at"
+
+
+class CompanyOrderColumn(BaseModel):
+    column: CompanyOrderColumns
     order: Order
 
 

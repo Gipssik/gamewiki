@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from backend.db.base import Base
 
@@ -20,4 +21,12 @@ class Sale(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id"),
         nullable=False,
+    )
+
+    platform = relationship("Platform", back_populates="sales", lazy="noload")
+    game = relationship("Game", back_populates="sales", lazy="noload")
+    created_by_user = relationship(
+        "User",
+        back_populates="created_sales",
+        lazy="joined",
     )

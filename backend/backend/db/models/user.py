@@ -26,14 +26,26 @@ class User(Base):
 
     created_companies = relationship(
         "Company",
-        backref="created_by_user",
+        back_populates="created_by_user",
         lazy="noload",
     )
     created_platforms = relationship(
         "Platform",
-        backref="created_by_user",
+        back_populates="created_by_user",
         lazy="noload",
     )
-    created_games = relationship("Game", backref="created_by_user", lazy="noload")
-    created_genres = relationship("Genre", backref="created_by_user", lazy="noload")
-    created_sales = relationship("Sale", backref="created_by_user", lazy="noload")
+    created_games = relationship(
+        "Game",
+        back_populates="created_by_user",
+        lazy="noload",
+    )
+    created_genres = relationship(
+        "Genre",
+        back_populates="created_by_user",
+        lazy="noload",
+    )
+    created_sales = relationship(
+        "Sale",
+        back_populates="created_by_user",
+        lazy="noload",
+    )
