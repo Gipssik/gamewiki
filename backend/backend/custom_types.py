@@ -10,6 +10,11 @@ class Order(str, Enum):
     DESC = "desc"
 
 
+class OrderColumn(BaseModel):
+    column: Enum  # Enum with possible names of columns to order by
+    order: Order
+
+
 class UserOrderColumns(str, Enum):
     CREATED_COMPANIES_ORDER = "created_companies"
     CREATED_PLATFORMS_ORDER = "created_platforms"
@@ -18,19 +23,14 @@ class UserOrderColumns(str, Enum):
     CREATED_SALES_ORDER = "created_sales"
 
 
-class UserOrderColumn(BaseModel):
-    column: UserOrderColumns
-    order: Order
-
-
 class CompanyOrderColumns(str, Enum):
     FOUNDED_AT = "founded_at"
     CREATED_AT = "created_at"
 
 
-class CompanyOrderColumn(BaseModel):
-    column: CompanyOrderColumns
-    order: Order
+class PlatformOrderColumns(str, Enum):
+    GAMES = "games"
+    SALES = "sales"
 
 
 class CommonQueries(BaseModel):

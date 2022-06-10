@@ -9,13 +9,13 @@ from sqlalchemy.orm import Load, joinedload
 from sqlalchemy.sql.elements import ClauseElement, and_
 from sqlalchemy.sql.functions import count
 
+from backend.custom_types import Order, OrderColumn
 from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
 from backend.db.utils import get_db_order
 from backend.exceptions import InvalidPasswordException, UserNotFoundException
 from backend.security import hash_password, verify_password
-from backend.types import Order, UserOrderColumn
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class UserDAO(BaseDAO[models.User]):
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
         created_at_order: Optional[Order] = Order.DESC,
-        extra_orders: Optional[list[UserOrderColumn]] = None,
+        extra_orders: Optional[list[OrderColumn]] = None,
     ) -> list[models.User]:
         """Get multiple users.
 
@@ -56,7 +56,7 @@ class UserDAO(BaseDAO[models.User]):
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
             created_at_order (Optional[Order]): Created at order.
-            extra_orders (Optional[list[UserOrderColumn]]): Extra orders.
+            extra_orders (Optional[list[OrderColumn]]): Extra orders.
 
         Returns:
             list[models.User]: Users.
@@ -88,7 +88,7 @@ class UserDAO(BaseDAO[models.User]):
         if extra_orders is not None:
             for x in extra_ordering_columns:
                 stmt = stmt.outerjoin(x)
-            stmt = stmt.group_by(models.User)
+            stmt = stmt.group_by(models.User.id)
 
         results = await self.session.execute(stmt)
         users = results.unique().scalars().all()

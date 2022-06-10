@@ -9,12 +9,12 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import ClauseElement
 from sqlalchemy.sql.functions import count
 
+from backend.custom_types import Order, OrderColumn
 from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
 from backend.db.utils import get_db_order
 from backend.exceptions import CompanyNotFoundException
-from backend.types import CompanyOrderColumn, Order
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,9 @@ class CompanyDAO(BaseDAO[models.Company]):
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         super().__init__(models.Company, session)
         self.default_options = [
-            joinedload(models.Company.games),
+            joinedload(models.Company.games).options(
+                joinedload(models.Game.created_by_company),
+            ),
         ]
 
     async def get_ordered_multi(
@@ -33,7 +35,7 @@ class CompanyDAO(BaseDAO[models.Company]):
         expr: Optional[list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        orders: Optional[list[CompanyOrderColumn]] = None,
+        orders: Optional[list[OrderColumn]] = None,
         games: Optional[Order] = None,
     ) -> list[models.Company]:
         """Get multiple companies ordered by given orders.
@@ -42,7 +44,7 @@ class CompanyDAO(BaseDAO[models.Company]):
             expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
-            orders (Optional[list[CompanyOrderColumn]]): Order by.
+            orders (Optional[list[OrderColumn]]): Order by.
             games (Optional[Order]): Order by amount of games.
 
         Returns:
@@ -76,32 +78,13 @@ class CompanyDAO(BaseDAO[models.Company]):
         )
 
         if games is not None:
-            stmt = stmt.outerjoin(models.Company.games).group_by(models.Company)
+            stmt = stmt.outerjoin(models.Company.games).group_by(models.Company.id)
 
         results = await self.session.execute(stmt)
         companies = results.unique().scalars().all()
 
         logger.debug(f"Got {len(companies)} companies.")
         return companies
-
-    async def create(self, company_in: dict[str, Any], user_id: str) -> models.Company:
-        """Create a new company.
-
-        Args:
-            company_in (dict[str, Any]): Company data.
-            user_id (str): Creator ID.
-
-        Returns:
-            models.Company: Created company.
-        """
-
-        db_company = models.Company(**company_in, created_by_user_id=user_id)
-        self.session.add(db_company)
-        await self.session.commit()
-        await self.session.refresh(db_company)
-
-        logger.debug(f"Created company {db_company.title}")
-        return db_company
 
     async def update(
         self,

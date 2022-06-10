@@ -3,15 +3,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
+from backend.custom_types import OrderColumn, UserOrderColumns
 from backend.db.dao import UserDAO
-from backend.db.dependencies.user import (
-    get_current_superuser,
-    get_current_user,
-    validate_extra_orders,
-)
+from backend.db.dependencies.order_validation import OrderValidation
+from backend.db.dependencies.user import get_current_superuser, get_current_user
 from backend.db.models.user import User
 from backend.exceptions import UserNotFoundException
-from backend.types import UserOrderColumn
 from backend.web.api.user import schema
 from backend.web.api.user.schema.user import User as UserSchema
 
@@ -21,7 +18,7 @@ router = APIRouter()
 @router.get("/", response_model=list[UserSchema])
 async def get_multi(
     queries: schema.UserQueries = Depends(),
-    extra_orders: list[UserOrderColumn] = Depends(validate_extra_orders),
+    extra_orders: list[OrderColumn] = Depends(OrderValidation(UserOrderColumns)),
     user_dao: UserDAO = Depends(),
 ) -> list[User]:
     """Get list of users.

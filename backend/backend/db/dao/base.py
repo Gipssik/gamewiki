@@ -1,5 +1,5 @@
 import logging
-from typing import Generic, Optional, Type, TypeVar
+from typing import Any, Generic, Optional, Type, TypeVar
 
 from sqlalchemy import and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,6 +83,29 @@ class BaseDAO(Generic[ModelType]):
 
         logger.debug(f"Got {len(objects)} {self.__model.__tablename__}")
         return objects
+
+    async def create_by_user(
+        self,
+        obj_in: dict[str, Any],
+        user_id: str,
+    ) -> ModelType:
+        """Create a new object by user.
+
+        Args:
+            obj_in (dict[str, Any]): Object data.
+            user_id (str): Creator ID.
+
+        Returns:
+            ModelType: Created object.
+        """
+
+        db_obj = self.__model(**obj_in, created_by_user_id=user_id)
+        self.session.add(db_obj)
+        await self.session.commit()
+        await self.session.refresh(db_obj)
+
+        logger.debug(f"Created {self.name.lower()} {db_obj.id}")
+        return db_obj
 
     async def delete(self, obj_id: str) -> None:
         """Delete object by id.

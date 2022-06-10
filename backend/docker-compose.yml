@@ -43,6 +43,8 @@ services:
       interval: 2s
       timeout: 3s
       retries: 40
+    ports:
+    - "9009:5432"
 
   pgweb:
     image: sosedoff/pgweb

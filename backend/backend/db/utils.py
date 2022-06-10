@@ -1,10 +1,13 @@
+from typing import Any, Callable
+
 from sqlalchemy import asc, desc, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.sql.elements import UnaryExpression
+from sqlalchemy.sql.sqltypes import NullType
 
+from backend.custom_types import Order
 from backend.settings import settings
-from backend.types import Order
 
 
 async def create_database() -> None:
@@ -46,5 +49,5 @@ async def drop_database() -> None:
         await conn.execute(text(f'DROP DATABASE "{settings.db_base}"'))
 
 
-def get_db_order(order: Order) -> UnaryExpression:
+def get_db_order(order: Order) -> Callable[[Any], UnaryExpression[NullType]]:
     return desc if order == Order.DESC else asc

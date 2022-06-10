@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Query, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose.exceptions import JWTError
@@ -7,7 +7,6 @@ from pydantic import ValidationError
 from backend.db.dao import UserDAO
 from backend.db.models.user import User
 from backend.settings import settings
-from backend.types import Order, UserOrderColumn, UserOrderColumns
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"/api/auth/access-token")
 
@@ -71,21 +70,3 @@ async def get_current_superuser(current_user: User = Depends(get_current_user)) 
             detail="Not allowed",
         )
     return current_user
-
-
-def validate_extra_orders(
-    extra_orders: list[str] = Query(default=[]),
-) -> list[UserOrderColumn]:
-    res: list[UserOrderColumn] = []
-    try:
-        for column in extra_orders:
-            col, order = column.split("__")
-            col = UserOrderColumns(col)
-            order = Order(order)
-            res.append(UserOrderColumn(column=col, order=order))
-    except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(error),
-        )
-    return res

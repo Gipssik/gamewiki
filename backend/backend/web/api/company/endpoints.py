@@ -3,13 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
+from backend.custom_types import CompanyOrderColumns, OrderColumn
 from backend.db import models
 from backend.db.dao import CompanyDAO
-from backend.db.dependencies.company import validate_orders
+from backend.db.dependencies.order_validation import OrderValidation
 from backend.db.dependencies.user import get_current_superuser
 from backend.db.models.company import Company
 from backend.exceptions import CompanyNotFoundException, ObjectNotFoundException
-from backend.types import CompanyOrderColumn
 from backend.web.api.company import schema
 from backend.web.api.company.schema.company import Company as CompanySchema
 
@@ -19,7 +19,7 @@ router = APIRouter()
 @router.get("/", response_model=list[CompanySchema])
 async def get_multi(
     queries: schema.CompanyQueries = Depends(),
-    orders: list[CompanyOrderColumn] = Depends(validate_orders),
+    orders: list[OrderColumn] = Depends(OrderValidation(CompanyOrderColumns)),
     company_dao: CompanyDAO = Depends(),
 ) -> list[Company]:
     """Get list of companies.
@@ -88,7 +88,10 @@ async def create(
     """
 
     try:
-        return await company_dao.create(company.dict(), str(current_superuser.id))
+        return await company_dao.create_by_user(
+            company.dict(),
+            str(current_superuser.id),
+        )
     except IntegrityError as error:
         if "duplicate key" in str(error.__cause__):
             raise HTTPException(
