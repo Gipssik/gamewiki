@@ -7,7 +7,6 @@
           <list>
             <option value="api" />
             <option value="db" />
-            <option value="migrator" />
             <option value="pgweb" />
           </list>
         </option>

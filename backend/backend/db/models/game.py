@@ -27,7 +27,7 @@ class Game(Base):
     )
 
     sales = relationship("Sale", back_populates="game", lazy="noload")
-    created_by_company = relationship("Company", back_populates="games", lazy="noload")
+    created_by_company = relationship("Company", back_populates="games", lazy="joined")
     platforms = relationship(
         "Platform",
         secondary="game_platform",

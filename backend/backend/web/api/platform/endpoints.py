@@ -9,7 +9,7 @@ from backend.db.dao.platform import PlatformDAO
 from backend.db.dependencies.order_validation import OrderValidation
 from backend.db.dependencies.user import get_current_superuser
 from backend.db.models.platform import Platform
-from backend.exceptions import ObjectNotFoundException, PlatformNotFoundException
+from backend.exceptions import ObjectNotFoundException
 from backend.web.api.platform import schema
 from backend.web.api.platform.schema.platform import Platform as PlatformSchema
 
@@ -124,7 +124,7 @@ async def update(
             platform.dict(exclude_unset=True),
             str(platform_id),
         )
-    except PlatformNotFoundException as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Platform not found",

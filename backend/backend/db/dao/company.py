@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import Depends
 from sqlalchemy import and_
@@ -14,7 +14,6 @@ from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
 from backend.db.utils import get_db_order
-from backend.exceptions import CompanyNotFoundException
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +76,9 @@ class CompanyDAO(BaseDAO[models.Company]):
             .options(*self.default_options)
         )
 
+        if any(["users" in str(x.left) for x in expr]):  # type: ignore
+            stmt = stmt.join(models.User)
+
         if games is not None:
             stmt = stmt.outerjoin(models.Company.games).group_by(models.Company.id)
 
@@ -85,33 +87,3 @@ class CompanyDAO(BaseDAO[models.Company]):
 
         logger.debug(f"Got {len(companies)} companies.")
         return companies
-
-    async def update(
-        self,
-        company_in: dict[str, Any],
-        company_id: str,
-    ) -> models.Company:
-        """Update a company.
-
-        Args:
-            company_in (dict[str, Any]): Company data.
-            company_id (str): Company ID.
-
-        Returns:
-            models.Company: Updated company.
-        """
-
-        db_company = await self.get(company_id)
-        if not db_company:
-            logger.error(f"Company {company_id} not found")
-            raise CompanyNotFoundException(company_id)
-
-        for field in company_in:
-            setattr(db_company, field, company_in[field])
-
-        self.session.add(db_company)
-        await self.session.commit()
-        await self.session.refresh(db_company)
-
-        logger.debug(f"Updated company {db_company.title}")
-        return db_company

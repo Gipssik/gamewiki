@@ -26,19 +26,11 @@ class UserDAO(BaseDAO[models.User]):
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         super().__init__(models.User, session)
         self.default_options: list[Load] = [
-            joinedload(models.User.created_companies).options(
-                joinedload(models.Company.games),
-            ),
-            joinedload(models.User.created_games).options(
-                joinedload(models.Game.sales),
-            ),
-            joinedload(models.User.created_platforms).options(
-                joinedload(models.Platform.games),
-            ),
+            joinedload(models.User.created_companies),
+            joinedload(models.User.created_games),
+            joinedload(models.User.created_platforms),
             joinedload(models.User.created_sales),
-            joinedload(models.User.created_genres).options(
-                joinedload(models.Genre.games),
-            ),
+            joinedload(models.User.created_genres),
         ]
 
     async def get_ordered_multi(

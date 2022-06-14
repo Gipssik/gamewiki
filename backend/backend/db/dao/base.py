@@ -7,6 +7,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import Load
 from sqlalchemy.sql import ClauseElement
 
+from backend.db import models
 from backend.db.base import Base
 from backend.exceptions import ObjectNotFoundException
 
@@ -50,7 +51,7 @@ class BaseDAO(Generic[ModelType]):
 
     async def get_multi(
         self,
-        expr: Optional[ClauseElement | list[ClauseElement]] = None,
+        expr: list[ClauseElement] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> list[ModelType]:
@@ -67,8 +68,6 @@ class BaseDAO(Generic[ModelType]):
 
         if expr is None:
             expr = []
-        elif isinstance(expr, ClauseElement):
-            expr = [expr]
 
         stmt = (
             select(self.__model)
@@ -77,6 +76,11 @@ class BaseDAO(Generic[ModelType]):
             .limit(limit)
             .options(*self.default_options)
         )
+
+        if self.name != "User" and any(
+            ["users" in str(x.left) for x in expr],
+        ):  # type: ignore
+            stmt = stmt.join(models.User)
 
         results = await self.session.execute(stmt)
         objects = results.unique().scalars().all()
@@ -105,6 +109,36 @@ class BaseDAO(Generic[ModelType]):
         await self.session.refresh(db_obj)
 
         logger.debug(f"Created {self.name.lower()} {db_obj.id}")
+        return db_obj
+
+    async def update(
+        self,
+        obj_in: dict[str, Any],
+        obj_id: str,
+    ) -> ModelType:
+        """Update an object.
+
+        Args:
+            obj_in (dict[str, Any]): Object data.
+            obj_id (str): Object ID.
+
+        Returns:
+            ModelType: Updated object.
+        """
+
+        db_obj = await self.get(obj_id)
+        if not db_obj:
+            logger.error(f"{self.name} {obj_id} not found")
+            raise ObjectNotFoundException(obj_id)
+
+        for field in obj_in:
+            setattr(db_obj, field, obj_in[field])
+
+        self.session.add(db_obj)
+        await self.session.commit()
+        await self.session.refresh(db_obj)
+
+        logger.debug(f"Updated {self.name.lower()} {db_obj.id}")
         return db_obj
 
     async def delete(self, obj_id: str) -> None:

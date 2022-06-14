@@ -9,7 +9,7 @@ from backend.db.dao import CompanyDAO
 from backend.db.dependencies.order_validation import OrderValidation
 from backend.db.dependencies.user import get_current_superuser
 from backend.db.models.company import Company
-from backend.exceptions import CompanyNotFoundException, ObjectNotFoundException
+from backend.exceptions import ObjectNotFoundException
 from backend.web.api.company import schema
 from backend.web.api.company.schema.company import Company as CompanySchema
 
@@ -37,7 +37,7 @@ async def get_multi(
         "title": Company.title.ilike(f"%{queries.title}%"),
         "created_by_user": models.User.username.ilike(f"%{queries.created_by_user}%"),
     }
-    filters = queries.dict(exclude_none=True, include={"title", "created_by_user"})
+    filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
     return await company_dao.get_ordered_multi(
@@ -125,7 +125,7 @@ async def update(
             company.dict(exclude_unset=True),
             str(company_id),
         )
-    except CompanyNotFoundException as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Company not found",
