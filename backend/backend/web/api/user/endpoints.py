@@ -8,7 +8,7 @@ from backend.db.dao import UserDAO
 from backend.db.dependencies.order_validation import OrderValidation
 from backend.db.dependencies.user import get_current_superuser, get_current_user
 from backend.db.models.user import User
-from backend.exceptions import UserNotFoundException
+from backend.exceptions import ObjectNotFoundException
 from backend.web.api.user import schema
 from backend.web.api.user.schema.user import User as UserSchema
 
@@ -146,7 +146,7 @@ async def update(
 
     try:
         return await user_dao.update(user.dict(exclude_unset=True), str(user_id))
-    except UserNotFoundException as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
@@ -182,7 +182,7 @@ async def delete_multi(
 
     try:
         await user_dao.delete_multi([str(user_id) for user_id in user_ids])
-    except UserNotFoundException as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User(s) not found: {str(error)}",

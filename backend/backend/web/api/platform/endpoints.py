@@ -37,7 +37,7 @@ async def get_multi(
         "title": Platform.title.ilike(f"%{queries.title}%"),
         "created_by_user": models.User.username.ilike(f"%{queries.created_by_user}%"),
     }
-    filters = queries.dict(exclude_none=True, include={"title", "created_by_user"})
+    filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
     return await platform_dao.get_ordered_multi(

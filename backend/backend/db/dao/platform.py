@@ -58,11 +58,11 @@ class PlatformDAO(BaseDAO[models.Platform]):
 
         if orders:
             platforms.sort(
-                key=lambda x: [
-                    len(getattr(x, order.column.value))
+                key=lambda platform: tuple(
+                    len(getattr(platform, order.column.value))
                     * (1 if order.order == Order.ASC else -1)
                     for order in orders
-                ],
+                ),
             )
 
         logger.debug(f"Got {len(platforms)} platforms")

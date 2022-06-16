@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from backend.db.dao import UserDAO
 from backend.db.dependencies.user import get_current_user
 from backend.db.models.user import User
-from backend.exceptions import InvalidPasswordException, UserNotFoundException
+from backend.exceptions import InvalidPasswordException, ObjectNotFoundException
 from backend.security import create_access_token
 from backend.web.api.auth.schema import Token
 from backend.web.api.user.schema.user import User as UserSchema
@@ -30,7 +30,7 @@ async def login_access_token(
 
     try:
         user = await user_dao.authenticate(form_data.username, form_data.password)
-    except (UserNotFoundException, InvalidPasswordException) as error:
+    except (ObjectNotFoundException, InvalidPasswordException) as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(error),

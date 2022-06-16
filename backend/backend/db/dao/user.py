@@ -14,7 +14,7 @@ from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
 from backend.db.utils import get_db_order
-from backend.exceptions import InvalidPasswordException, UserNotFoundException
+from backend.exceptions import InvalidPasswordException, ObjectNotFoundException
 from backend.security import hash_password, verify_password
 
 logger = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class UserDAO(BaseDAO[models.User]):
         db_user = await self.get(user_id)
         if not db_user:
             logger.error(f"User {user_id} not found")
-            raise UserNotFoundException(user_id)
+            raise ObjectNotFoundException(user_id)
 
         if "password" in user_in:
             hashed_password, salt = hash_password(user_in["password"])
@@ -179,9 +179,9 @@ class UserDAO(BaseDAO[models.User]):
         users = results.scalars().all()
 
         if len(users) != len(user_ids):
-            intersection = set(user_ids) - {str(x) for x in users}
-            logger.error(f"Some users not found: {intersection}")
-            raise UserNotFoundException(f"{', '.join(intersection)}")
+            diff = set(user_ids) - {str(x) for x in users}
+            logger.error(f"Some users not found: {diff}")
+            raise ObjectNotFoundException(f"{', '.join(diff)}")
 
         await self.session.execute(stmt)
 
@@ -219,7 +219,7 @@ class UserDAO(BaseDAO[models.User]):
             password (str): Password.
 
         Raises:
-            UserNotFoundException: User not found.
+            ObjectNotFoundException: User not found.
             InvalidPasswordException: Invalid password.
 
         Returns:
@@ -230,7 +230,7 @@ class UserDAO(BaseDAO[models.User]):
 
         if not user:
             logger.error(f"User {username} not found")
-            raise UserNotFoundException(f"User {username} not found")
+            raise ObjectNotFoundException(f"User {username} not found")
 
         if not verify_password(password, user.salt, user.hashed_password):
             logger.error(f"User {username} password incorrect")

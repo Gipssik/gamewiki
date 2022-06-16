@@ -33,6 +33,14 @@ class PlatformOrderColumns(str, Enum):
     SALES = "sales"
 
 
+class GameOrderColumns(str, Enum):
+    RELEASED_AT = "released_at"
+    CREATED_AT = "created_at"
+    SALES = "sales"
+    PLATFORMS = "platforms"
+    GENRES = "genres"
+
+
 class CommonQueries(BaseModel):
     skip: Optional[int] = Query(0, ge=0)
     limit: Optional[int] = Query(100, ge=1)

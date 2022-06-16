@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class GameInDB(BaseModel):
     id: UUID
     title: str
-    released_at: datetime
+    released_at: date
     created_at: datetime
 
     class Config:

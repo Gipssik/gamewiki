@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from backend.db import models
-from backend.db.dao.genre import GenreDAO
+from backend.db.dao import GenreDAO
 from backend.db.dependencies.user import get_current_superuser
 from backend.db.models.genre import Genre
 from backend.exceptions import ObjectNotFoundException

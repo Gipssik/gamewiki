@@ -43,10 +43,9 @@ class BaseDAO(Generic[ModelType]):
         results = await self.session.execute(stmt)
         db_obj = results.unique().scalar_one_or_none()
 
-        if db_obj is None:
-            return None
+        if db_obj is not None:
+            logger.debug(f"Got {self.name.lower()} {db_obj.id}")
 
-        logger.debug(f"Got {self.name.lower()} {db_obj.id}")
         return db_obj
 
     async def get_multi(
@@ -78,8 +77,8 @@ class BaseDAO(Generic[ModelType]):
         )
 
         if self.name != "User" and any(
-            ["users" in str(x.left) for x in expr],
-        ):  # type: ignore
+            ["users" in str(x.left) for x in expr],  # type: ignore
+        ):
             stmt = stmt.join(models.User)
 
         results = await self.session.execute(stmt)
@@ -174,8 +173,6 @@ class BaseDAO(Generic[ModelType]):
         objects = results.scalars().all()
 
         if len(objects) != len(obj_ids):
-            intersection = set(obj_ids) - {str(x) for x in objects}
-            logger.error(f"Some {self.__model.__tablename__} not found: {intersection}")
-            raise ObjectNotFoundException(f"{', '.join(intersection)}")
-
-        await self.session.execute(stmt)
+            diff = set(obj_ids) - {str(x) for x in objects}
+            logger.error(f"Some {self.__model.__tablename__} not found: {diff}")
+            raise ObjectNotFoundException(f"{', '.join(diff)}")
