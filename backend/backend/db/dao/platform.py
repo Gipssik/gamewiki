@@ -2,14 +2,20 @@ import logging
 from typing import Optional
 
 from fastapi import Depends
+from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import Load, joinedload
+from sqlalchemy.orm.attributes import CollectionAttributeImpl, ScalarObjectAttributeImpl
 from sqlalchemy.sql import ClauseElement
+from sqlalchemy.sql.functions import count
 
-from backend.custom_types import Order, OrderColumn
+from backend.custom_types import OrderColumn
 from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
+from backend.db.models.platform import game_platform
+from backend.db.utils import get_db_order
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +33,7 @@ class PlatformDAO(BaseDAO[models.Platform]):
         expr: Optional[list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        orders: Optional[list[OrderColumn]] = None,
+        sort: Optional[list[OrderColumn]] = None,
     ) -> list[models.Platform]:
         """Get multiple platforms ordered by the given orders.
 
@@ -35,35 +41,73 @@ class PlatformDAO(BaseDAO[models.Platform]):
             expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
-            orders (Optional[list[OrderColumn]]): Order columns.
+            sort (Optional[list[OrderColumn]]): Order columns.
 
         Returns:
             list[models.Platform]: Platforms.
         """
 
-        # TODO: try to fix SQL
+        # TODO: Fix sorting when using created_by_user
 
-        # if orders is not None:
-        #     orders_list: list[UnaryExpression] = []
-        #
-        #     for order in orders:
-        #         ordering_column = getattr(models.Platform, order.column.value)
-        #         prop = count(ordering_column)
-        #         stmt = stmt.outerjoin(ordering_column)
-        #         orders_list.append(get_db_order(order.order)(prop))
-        #
-        #     stmt = stmt.order_by(*orders_list).group_by(models.Platform.id)
+        if expr is None:
+            expr = []
 
-        platforms = await self.get_multi(expr, offset, limit)
+        stmt = (
+            select(models.Platform)
+            .where(and_(True, *expr))
+            .offset(offset)
+            .limit(limit)
+            .options(*self.default_options)
+        )
 
-        if orders:
-            platforms.sort(
-                key=lambda platform: tuple(
-                    len(getattr(platform, order.column.value))
-                    * (1 if order.order == Order.ASC else -1)
-                    for order in orders
-                ),
-            )
+        if any(["users" in str(x.left) for x in expr]):  # type: ignore
+            stmt = stmt.join(models.User)
+
+        if sort:
+            stmt = self._apply_sort(stmt, sort)
+
+        results = await self.session.execute(stmt)
+        platforms = results.unique().scalars().all()
 
         logger.debug(f"Got {len(platforms)} platforms")
         return platforms
+
+    def _apply_sort(self, stmt: select, sort: list[OrderColumn]) -> select:
+        """Apply sorting to statement.
+
+        Args:
+            stmt (select): Statement.
+            sort (list[OrderColumn]): Sort order.
+
+        Returns:
+            select: Statement.
+        """
+
+        order_columns = []
+        group_by = [models.Platform.id]
+        for param in sort:
+            column = getattr(models.Platform, param.column.value)
+
+            # if column is a collection, we need to order by the count
+            if isinstance(column.impl, CollectionAttributeImpl):
+                if param.column.value != "games":
+                    stmt = stmt.outerjoin(column)
+                column = count(column)
+            # if column is a related field, we need to order by this field's caption
+            elif isinstance(column.impl, ScalarObjectAttributeImpl):
+                stmt = stmt.outerjoin(column)
+                column = PlatformDAO._get_column(column)
+                group_by.append(column)
+
+            order = get_db_order(param.order)(column)
+            order_columns.append(order)
+
+        stmt = stmt.order_by(*order_columns).group_by(*group_by)
+        if "games" in [param.column.value for param in sort]:
+            stmt = (
+                stmt.outerjoin(game_platform)
+                .outerjoin(models.Game)
+                .outerjoin(game_platform.alias())
+            )
+
+        return stmt

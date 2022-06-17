@@ -1,9 +1,8 @@
 from typing import Optional
 
 from fastapi import Query
-from pydantic import validator
 
-from backend.custom_types import CommonQueries, Order
+from backend.custom_types import CommonQueries
 
 
 class UserQueries(CommonQueries):

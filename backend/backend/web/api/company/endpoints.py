@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from backend.custom_types import CompanyOrderColumns, OrderColumn
@@ -18,15 +18,17 @@ router = APIRouter()
 
 @router.get("/", response_model=list[CompanySchema])
 async def get_multi(
+    response: Response,
     queries: schema.CompanyQueries = Depends(),
-    orders: list[OrderColumn] = Depends(OrderValidation(CompanyOrderColumns)),
+    sort: list[OrderColumn] = Depends(OrderValidation(CompanyOrderColumns)),
     company_dao: CompanyDAO = Depends(),
 ) -> list[Company]:
     """Get list of companies.
 
     Args:
+        response (Response): Response.
         queries (CompanyQueries, optional): Query parameters.
-        orders (list[str], optional): Order parameters.
+        sort (list[OrderColumn], optional): Order parameters.
         company_dao (CompanyDAO, optional): Company DAO.
 
     Returns:
@@ -40,13 +42,16 @@ async def get_multi(
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    return await company_dao.get_ordered_multi(
+    amount = await company_dao.get_count(expr=filters_list)
+    companies = await company_dao.get_ordered_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
-        orders=orders,
-        games=queries.games,
+        sort=sort,
     )
+
+    response.headers["X-Total-Count"] = str(amount)
+    return companies
 
 
 @router.get("/{company_id}", response_model=CompanySchema)

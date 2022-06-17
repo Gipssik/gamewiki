@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from backend.custom_types import OrderColumn, UserOrderColumns
@@ -17,15 +17,17 @@ router = APIRouter()
 
 @router.get("/", response_model=list[UserSchema])
 async def get_multi(
+    response: Response,
     queries: schema.UserQueries = Depends(),
-    order: OrderColumn | None = Depends(OrderValidation(UserOrderColumns)),
+    sort: list[OrderColumn] = Depends(OrderValidation(UserOrderColumns)),
     user_dao: UserDAO = Depends(),
 ) -> list[User]:
     """Get list of users.
 
     Args:
+        response (Response): Response.
         queries (UserQueries, optional): User queries.
-        order (OrderColumn, optional): Order column.
+        sort (list[OrderColumn], optional): Order parameters.
         user_dao (UserDAO, optional): User DAO.
 
     Returns:
@@ -38,21 +40,19 @@ async def get_multi(
         "is_superuser": User.is_superuser == queries.is_superuser,
         "is_primary": User.is_primary == queries.is_primary,
     }
-    filters = queries.dict(
-        exclude_none=True,
-        exclude={"skip", "limit", "created_at_order"},
-    )
+    filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    dct = {
-        'expr': filters_list,
-        'offset': queries.skip,
-        'limit': queries.limit,
-    }
-    if order is not None:
-        dct['order_field'] = order
+    amount = await user_dao.get_count(expr=filters_list)
+    users = await user_dao.get_ordered_multi(
+        expr=filters_list,
+        offset=queries.skip,
+        limit=queries.limit,
+        sort=sort,
+    )
 
-    return await user_dao.get_ordered_multi(**dct)
+    response.headers["X-Total-Count"] = str(amount)
+    return users
 
 
 @router.get("/me", response_model=UserSchema)

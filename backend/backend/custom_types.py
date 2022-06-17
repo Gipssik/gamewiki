@@ -28,13 +28,18 @@ class UserOrderColumns(str, Enum):
 
 
 class CompanyOrderColumns(str, Enum):
+    TITLE = "title"
     FOUNDED_AT = "founded_at"
     CREATED_AT = "created_at"
+    GAMES = "games"
+    CREATED_BY_USER = "created_by_user"
 
 
 class PlatformOrderColumns(str, Enum):
+    TITLE = "title"
     GAMES = "games"
     SALES = "sales"
+    CREATED_BY_USER = "created_by_user"
 
 
 class GameOrderColumns(str, Enum):

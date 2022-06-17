@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from backend.custom_types import OrderColumn, PlatformOrderColumns
@@ -18,15 +18,17 @@ router = APIRouter()
 
 @router.get("/", response_model=list[PlatformSchema])
 async def get_multi(
+    response: Response,
     queries: schema.PlatformQueries = Depends(),
-    orders: list[OrderColumn] = Depends(OrderValidation(PlatformOrderColumns)),
+    sort: list[OrderColumn] = Depends(OrderValidation(PlatformOrderColumns)),
     platform_dao: PlatformDAO = Depends(),
 ) -> list[Platform]:
     """Get list of platforms.
 
     Args:
+        response (Response): Response.
         queries (schema.PlatformQueries): Query parameters.
-        orders (list[OrderColumn]): Order parameters.
+        sort (list[OrderColumn], optional): Order parameters.
         platform_dao (PlatformDAO): Platform DAO.
 
     Returns:
@@ -40,12 +42,16 @@ async def get_multi(
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    return await platform_dao.get_ordered_multi(
+    amount = await platform_dao.get_count(expr=filters_list)
+    platforms = await platform_dao.get_ordered_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
-        orders=orders,
+        sort=sort,
     )
+
+    response.headers["X-Total-Count"] = str(amount)
+    return platforms
 
 
 @router.get("/{platform_id}", response_model=PlatformSchema)

@@ -1,19 +1,16 @@
 import logging
-from typing import Any, Optional 
+from typing import Any
 
 from fastapi import Depends
 from sqlalchemy import delete, true
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import Load, joinedload
-from sqlalchemy.sql.elements import ClauseElement, and_
-from sqlalchemy.sql.functions import count
+from sqlalchemy.sql.elements import ClauseElement
 
-from backend.custom_types import Order, OrderColumn
 from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
-from backend.db.utils import get_db_order
 from backend.exceptions import InvalidPasswordException, ObjectNotFoundException
 from backend.security import hash_password, verify_password
 
@@ -32,57 +29,6 @@ class UserDAO(BaseDAO[models.User]):
             joinedload(models.User.created_sales),
             joinedload(models.User.created_genres),
         ]
-
-    async def get_ordered_multi(
-        self,
-        expr: Optional[list[ClauseElement]] = None,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = 100,
-        order_field: Optional[OrderColumn] = None,
-    ) -> list[models.User]:
-        """Get multiple users.
-
-        Args:
-            expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
-            offset (Optional[int]): Offset.
-            limit (Optional[int]): Limit.
-            order_field (Optional[OrderColumn]): Order field.
-
-        Returns:
-            list[models.User]: Users.
-        """
-
-        if expr is None:
-            expr = []
-
-        # orders_list = [get_db_order(created_at_order)(models.User.created_at)]  # noqa
-        # extra_ordering_columns = []
-        #
-        # if extra_orders is not None:
-        #     for extra_order in extra_orders:
-        #         extra_ordering_column = getattr(models.User, extra_order.column.value)
-        #         prop = count(extra_ordering_column)
-        #         order = get_db_order(extra_order.order)(prop)
-        #         orders_list.insert(-1, order)
-        #         extra_ordering_columns.append(extra_ordering_column)
-
-        stmt = (
-            select(models.User)
-            .where(and_(True, *expr))
-            .offset(offset)
-            .limit(limit)
-            .options(*self.default_options)
-        )
-
-        if order_field is not None:
-            column = getattr(models.User, order_field.column.value)
-            print(column)
-
-        results = await self.session.execute(stmt)
-        users = results.unique().scalars().all()
-
-        logger.debug(f"Got {len(users)} users")
-        return users
 
     async def create(self, user_in: dict[str, Any]) -> models.User:
         """Create user.
