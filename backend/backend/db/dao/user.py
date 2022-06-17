@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional 
 
 from fastapi import Depends
 from sqlalchemy import delete, true
@@ -38,8 +38,7 @@ class UserDAO(BaseDAO[models.User]):
         expr: Optional[list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        created_at_order: Optional[Order] = Order.DESC,
-        extra_orders: Optional[list[OrderColumn]] = None,
+        order_field: Optional[OrderColumn] = None,
     ) -> list[models.User]:
         """Get multiple users.
 
@@ -47,8 +46,7 @@ class UserDAO(BaseDAO[models.User]):
             expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
-            created_at_order (Optional[Order]): Created at order.
-            extra_orders (Optional[list[OrderColumn]]): Extra orders.
+            order_field (Optional[OrderColumn]): Order field.
 
         Returns:
             list[models.User]: Users.
@@ -57,30 +55,28 @@ class UserDAO(BaseDAO[models.User]):
         if expr is None:
             expr = []
 
-        orders_list = [get_db_order(created_at_order)(models.User.created_at)]  # noqa
-        extra_ordering_columns = []
-
-        if extra_orders is not None:
-            for extra_order in extra_orders:
-                extra_ordering_column = getattr(models.User, extra_order.column.value)
-                prop = count(extra_ordering_column)
-                order = get_db_order(extra_order.order)(prop)
-                orders_list.insert(-1, order)
-                extra_ordering_columns.append(extra_ordering_column)
+        # orders_list = [get_db_order(created_at_order)(models.User.created_at)]  # noqa
+        # extra_ordering_columns = []
+        #
+        # if extra_orders is not None:
+        #     for extra_order in extra_orders:
+        #         extra_ordering_column = getattr(models.User, extra_order.column.value)
+        #         prop = count(extra_ordering_column)
+        #         order = get_db_order(extra_order.order)(prop)
+        #         orders_list.insert(-1, order)
+        #         extra_ordering_columns.append(extra_ordering_column)
 
         stmt = (
             select(models.User)
             .where(and_(True, *expr))
             .offset(offset)
             .limit(limit)
-            .order_by(*orders_list)
             .options(*self.default_options)
         )
 
-        if extra_orders is not None:
-            for x in extra_ordering_columns:
-                stmt = stmt.outerjoin(x)
-            stmt = stmt.group_by(models.User.id)
+        if order_field is not None:
+            column = getattr(models.User, order_field.column.value)
+            print(column)
 
         results = await self.session.execute(stmt)
         users = results.unique().scalars().all()

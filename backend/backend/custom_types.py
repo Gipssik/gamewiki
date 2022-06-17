@@ -16,11 +16,15 @@ class OrderColumn(BaseModel):
 
 
 class UserOrderColumns(str, Enum):
-    CREATED_COMPANIES_ORDER = "created_companies"
-    CREATED_PLATFORMS_ORDER = "created_platforms"
-    CREATED_GAMES_ORDER = "created_games"
-    CREATED_GENRES_ORDER = "created_genres"
-    CREATED_SALES_ORDER = "created_sales"
+    USERNAME = "username"
+    EMAIL = "email"
+    IS_SUPERUSER = "is_superuser"
+    CREATED_AT = "created_at"
+    CREATED_COMPANIES = "created_companies"
+    CREATED_PLATFORMS = "created_platforms"
+    CREATED_GAMES = "created_games"
+    CREATED_GENRES = "created_genres"
+    CREATED_SALES = "created_sales"
 
 
 class CompanyOrderColumns(str, Enum):

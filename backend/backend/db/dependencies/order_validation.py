@@ -9,17 +9,11 @@ class OrderValidation:
     def __init__(self, columns_enum: EnumMeta):
         self.enum = columns_enum
 
-    def __call__(self, orders: list[str] = Query(default=[])) -> list[OrderColumn]:
-        res: list[OrderColumn] = []
-        try:
-            for column_order in orders:
-                column, order = column_order.split("__")
-                column = self.enum(column)
-                order = Order(order)
-                res.append(OrderColumn(column=column, order=order))
-        except ValueError as error:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=str(error),
-            )
-        return res
+    def __call__(self, order: str = Query(default=None)) -> OrderColumn | None:
+        if order is None:
+            return None
+
+        column, order = order.split("__")
+        column = self.enum(column)
+        order = Order(order)
+        return OrderColumn(column=column, order=order)

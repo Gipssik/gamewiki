@@ -18,14 +18,14 @@ router = APIRouter()
 @router.get("/", response_model=list[UserSchema])
 async def get_multi(
     queries: schema.UserQueries = Depends(),
-    extra_orders: list[OrderColumn] = Depends(OrderValidation(UserOrderColumns)),
+    order: OrderColumn | None = Depends(OrderValidation(UserOrderColumns)),
     user_dao: UserDAO = Depends(),
 ) -> list[User]:
     """Get list of users.
 
     Args:
         queries (UserQueries, optional): User queries.
-        extra_orders (list[str], optional): Extra orders.
+        order (OrderColumn, optional): Order column.
         user_dao (UserDAO, optional): User DAO.
 
     Returns:
@@ -44,13 +44,15 @@ async def get_multi(
     )
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    return await user_dao.get_ordered_multi(
-        expr=filters_list,
-        offset=queries.skip,
-        limit=queries.limit,
-        created_at_order=queries.created_at_order,
-        extra_orders=extra_orders,
-    )
+    dct = {
+        'expr': filters_list,
+        'offset': queries.skip,
+        'limit': queries.limit,
+    }
+    if order is not None:
+        dct['order_field'] = order
+
+    return await user_dao.get_ordered_multi(**dct)
 
 
 @router.get("/me", response_model=UserSchema)
