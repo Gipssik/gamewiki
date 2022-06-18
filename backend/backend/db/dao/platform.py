@@ -47,8 +47,6 @@ class PlatformDAO(BaseDAO[models.Platform]):
             list[models.Platform]: Platforms.
         """
 
-        # TODO: Fix sorting when using created_by_user
-
         if expr is None:
             expr = []
 
@@ -85,6 +83,10 @@ class PlatformDAO(BaseDAO[models.Platform]):
 
         order_columns = []
         group_by = [models.Platform.id]
+
+        # if statement was already joined with users table
+        is_joined_with_users = bool(getattr(stmt, "_setup_joins"))
+
         for param in sort:
             column = getattr(models.Platform, param.column.value)
 
@@ -95,7 +97,8 @@ class PlatformDAO(BaseDAO[models.Platform]):
                 column = count(column)
             # if column is a related field, we need to order by this field's caption
             elif isinstance(column.impl, ScalarObjectAttributeImpl):
-                stmt = stmt.outerjoin(column)
+                if param.column.value != "created_by_user" or not is_joined_with_users:
+                    stmt = stmt.outerjoin(column)
                 column = PlatformDAO._get_column(column)
                 group_by.append(column)
 
@@ -103,6 +106,7 @@ class PlatformDAO(BaseDAO[models.Platform]):
             order_columns.append(order)
 
         stmt = stmt.order_by(*order_columns).group_by(*group_by)
+        # TODO: fix cartesian product when using created_by_user and games sorting
         if "games" in [param.column.value for param in sort]:
             stmt = (
                 stmt.outerjoin(game_platform)

@@ -42,6 +42,12 @@ class PlatformOrderColumns(str, Enum):
     CREATED_BY_USER = "created_by_user"
 
 
+class GenreOrderColumns(str, Enum):
+    TITLE = "title"
+    GAMES = "games"
+    CREATED_BY_USER = "created_by_user"
+
+
 class GameOrderColumns(str, Enum):
     RELEASED_AT = "released_at"
     CREATED_AT = "created_at"

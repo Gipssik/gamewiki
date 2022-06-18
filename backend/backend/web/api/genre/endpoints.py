@@ -1,10 +1,12 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
+from backend.custom_types import GenreOrderColumns, OrderColumn
 from backend.db import models
 from backend.db.dao import GenreDAO
+from backend.db.dependencies.order_validation import OrderValidation
 from backend.db.dependencies.user import get_current_superuser
 from backend.db.models.genre import Genre
 from backend.exceptions import ObjectNotFoundException
@@ -16,13 +18,17 @@ router = APIRouter()
 
 @router.get("/", response_model=list[GenreSchema])
 async def get_multi(
+    response: Response,
     queries: schema.GenreQueries = Depends(),
+    sort: list[OrderColumn] = Depends(OrderValidation(GenreOrderColumns)),
     genre_dao: GenreDAO = Depends(),
 ) -> list[Genre]:
     """Get list of genres.
 
     Args:
+        response (Response): Response.
         queries (GenreQueries, optional): Query parameters.
+        sort (list[OrderColumn], optional): Order parameters.
         genre_dao (GenreDAO, optional): Genre DAO.
 
     Returns:
@@ -36,12 +42,16 @@ async def get_multi(
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    return await genre_dao.get_ordered_multi(
+    amount = await genre_dao.get_count(expr=filters_list)
+    genres = await genre_dao.get_ordered_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
-        games=queries.games,
+        sort=sort,
     )
+
+    response.headers["X-Total-Count"] = str(amount)
+    return genres
 
 
 @router.get("/{genre_id}", response_model=GenreSchema)
