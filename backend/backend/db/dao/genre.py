@@ -26,9 +26,7 @@ class GenreDAO(BaseDAO[models.Genre]):
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         super().__init__(models.Genre, session)
         self.default_options = [
-            joinedload(models.Genre.games).options(
-                joinedload(models.Game.created_by_company),
-            ),
+            joinedload(models.Genre.games),
         ]
 
     async def get_ordered_multi(

@@ -77,7 +77,7 @@ async def get(genre_id: UUID, genre_dao: GenreDAO = Depends()) -> Genre:
 
 @router.post("/", response_model=GenreSchema)
 async def create(
-    genre: schema.GenreCreate = Depends(),
+    genre: schema.GenreCreate,
     genre_dao: GenreDAO = Depends(),
     current_superuser: models.User = Depends(get_current_superuser),
 ) -> Genre:

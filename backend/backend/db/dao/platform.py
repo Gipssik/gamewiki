@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class PlatformDAO(BaseDAO[models.Platform]):
+    """Class for accessing platform table"""
+
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         super().__init__(models.Platform, session)
         self.default_options: list[Load] = [

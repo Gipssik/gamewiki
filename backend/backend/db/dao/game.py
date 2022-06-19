@@ -160,23 +160,26 @@ class GameDAO(BaseDAO[models.Game]):
             logger.error(f"Game {game_id} not found.")
             raise ObjectNotFoundException(game_id)
 
-        return db_game
+        if "genres" in game_in:
+            genres = await self._get_relation_list(
+                models.Genre,
+                game_in["genres"],
+            )
 
-        # if "genres" in game_in:
-        #     genres = await self._get_relation_list(
-        #         models.Genre, game_in["genres"]
-        #     )
-        #
-        #     db_game.genres = []
-        #     db_game.genres = genres
-        #
-        # self.session.add(db_game)
-        # await self.session.commit()
-        #
-        # db_game = await self.get(db_game.id)
-        #
-        # logger.debug(f"Updated game {db_game.id}")
-        # return db_game
+            db_game.genres = []
+            db_game.genres = genres
+            game_in.pop("genres")
+
+        for field in game_in:
+            setattr(db_game, field, game_in[field])
+
+        self.session.add(db_game)
+        await self.session.commit()
+
+        db_game = await self.get(db_game.id)
+
+        logger.debug(f"Updated game {db_game.id}")
+        return db_game
 
     async def _get_relation_list(
         self,
