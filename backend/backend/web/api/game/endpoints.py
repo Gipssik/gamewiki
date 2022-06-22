@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError
 
 from backend.custom_types import GameOrderColumns, OrderColumn
@@ -18,15 +18,17 @@ router = APIRouter()
 
 @router.get("/", response_model=list[GameSchema])
 async def get_multi(
+    response: Response,
     queries: schema.GameQueries = Depends(),
-    orders: list[OrderColumn] = Depends(OrderValidation(GameOrderColumns)),
+    sort: list[OrderColumn] = Depends(OrderValidation(GameOrderColumns)),
     game_dao: GameDAO = Depends(),
 ) -> list[Game]:
     """Get list of games.
 
     Args:
+        response (Response): Response.
         queries (schema.GameQueries): Query parameters.
-        orders (list[OrderColumn]): Order parameters.
+        sort (list[OrderColumn], optional): Order parameters.
         game_dao (GameDAO): Game DAO.
 
     Returns:
@@ -44,12 +46,16 @@ async def get_multi(
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
     filters_list = [filters_dict[key] for key in filters.keys()]
 
-    return await game_dao.get_ordered_multi(
+    amount = await game_dao.get_count(expr=filters_list)
+    games = await game_dao.get_ordered_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
-        orders=orders,
+        sort=sort,
     )
+
+    response.headers["X-Total-Count"] = str(amount)
+    return games
 
 
 @router.get("/{game_id}", response_model=GameSchema)

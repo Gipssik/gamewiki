@@ -49,11 +49,13 @@ class GenreOrderColumns(str, Enum):
 
 
 class GameOrderColumns(str, Enum):
+    TITLE = "title"
     RELEASED_AT = "released_at"
     CREATED_AT = "created_at"
     SALES = "sales"
     PLATFORMS = "platforms"
     GENRES = "genres"
+    CREATED_BY_COMPANY = "created_by_company"
 
 
 class CommonQueries(BaseModel):

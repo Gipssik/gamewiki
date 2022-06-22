@@ -7,13 +7,17 @@ from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import Load, joinedload
+from sqlalchemy.orm.attributes import CollectionAttributeImpl, ScalarObjectAttributeImpl
 from sqlalchemy.sql import ClauseElement
+from sqlalchemy.sql.functions import count
 
-from backend.custom_types import Order, OrderColumn
+from backend.custom_types import OrderColumn
 from backend.db import models
 from backend.db.base import Base
 from backend.db.dao.base import BaseDAO
 from backend.db.dependencies.db import get_db_session
+from backend.db.models.genre import game_genre
+from backend.db.models.platform import game_platform
 from backend.db.utils import get_db_order
 from backend.exceptions import ObjectNotFoundException
 
@@ -36,7 +40,7 @@ class GameDAO(BaseDAO[models.Game]):
         expr: Optional[list[ClauseElement]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        orders: Optional[list[OrderColumn]] = None,
+        sort: Optional[list[OrderColumn]] = None,
     ) -> list[models.Game]:
         """Get multiple games ordered by the given orders.
 
@@ -44,7 +48,7 @@ class GameDAO(BaseDAO[models.Game]):
             expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
-            orders (Optional[list[OrderColumn]]): Order columns.
+            sort (Optional[list[OrderColumn]]): Order columns.
 
         Returns:
             list[models.Game]: Games.
@@ -53,20 +57,11 @@ class GameDAO(BaseDAO[models.Game]):
         if expr is None:
             expr = []
 
-        date_orders_list = []
-        if orders:
-            date_orders_list = [
-                get_db_order(order.order)(getattr(models.Game, order.column.value))
-                for order in orders
-                if order.column.value.endswith("_at")
-            ]
-
         stmt = (
             select(models.Game)
             .where(and_(True, *expr))
             .offset(offset)
             .limit(limit)
-            .order_by(*date_orders_list)
             .options(*self.default_options)
         )
 
@@ -77,21 +72,76 @@ class GameDAO(BaseDAO[models.Game]):
         if "companies" in expr_models:
             stmt = stmt.join(models.Company)
 
+        if sort:
+            stmt = self._apply_sort(stmt, sort)
+
         results = await self.session.execute(stmt)
         games = results.unique().scalars().all()
 
-        if orders:
-            games.sort(
-                key=lambda game: tuple(
-                    len(getattr(game, order.column.value))
-                    * (1 if order.order == Order.ASC else -1)
-                    for order in orders
-                    if not order.column.value.endswith("_at")
-                ),
-            )
-
         logger.debug(f"Got {len(games)} games.")
         return games
+
+    def _apply_sort(self, stmt: select, sort: list[OrderColumn]) -> select:
+        """Apply sorting to statement.
+
+        Args:
+            stmt (select): Statement.
+            sort (list[OrderColumn]): Sort order.
+
+        Returns:
+            select: Statement.
+        """
+
+        order_columns = []
+        group_by = [models.Game.id]
+
+        # if statement was already joined with table
+        joining = [table[0].name for table in getattr(stmt, "_setup_joins")]
+        is_joined_with_users = "users" in joining
+        is_joined_with_companies = "companies" in joining
+
+        for param in sort:
+            column = getattr(models.Game, param.column.value)
+
+            # if column is a collection, we need to order by the count
+            if isinstance(column.impl, CollectionAttributeImpl):
+                if param.column.value != "platforms" and param.column.value != "genres":
+                    stmt = stmt.outerjoin(column)
+                column = count(column)
+            # if column is a related field, we need to order by this field's caption
+            elif isinstance(column.impl, ScalarObjectAttributeImpl):
+                if (
+                    param.column.value != "created_by_user" or not is_joined_with_users
+                ) and (
+                    param.column.value != "created_by_company"
+                    or not is_joined_with_companies
+                ):
+                    stmt = stmt.outerjoin(column)
+                column = GameDAO._get_column(column)
+                group_by.append(column)
+
+            order = get_db_order(param.order)(column)
+            order_columns.append(order)
+
+        stmt = stmt.order_by(*order_columns).group_by(*group_by)
+        sorting = [param.column.value for param in sort]
+        if "platforms" in sorting:
+            stmt = (
+                stmt.outerjoin(game_platform)
+                .outerjoin(models.Platform)
+                .outerjoin(game_platform.alias())
+            )
+        if "genres" in sorting:
+            stmt = (
+                stmt.outerjoin(game_genre)
+                .outerjoin(models.Genre)
+                .outerjoin(game_genre.alias())
+            )
+
+        if "platforms" in sorting and "genres" in sorting:
+            stmt = stmt.outerjoin(game_genre.alias()).outerjoin(game_platform.alias())
+
+        return stmt
 
     async def create_by_user(
         self,
@@ -159,6 +209,8 @@ class GameDAO(BaseDAO[models.Game]):
         if not db_game:
             logger.error(f"Game {game_id} not found.")
             raise ObjectNotFoundException(game_id)
+
+        print(db_game.__dict__)
 
         if "genres" in game_in:
             genres = await self._get_relation_list(
