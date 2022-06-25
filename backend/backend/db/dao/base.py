@@ -1,101 +1,42 @@
 import logging
 from typing import Any, Generic, Optional, Type, TypeVar
 
-from sqlalchemy import and_, delete, inspect
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import InstrumentedAttribute, Load
-from sqlalchemy.orm.attributes import CollectionAttributeImpl, ScalarObjectAttributeImpl
-from sqlalchemy.sql import ClauseElement
-from sqlalchemy.sql.functions import count
+from tortoise.functions import Count
+from tortoise.models import Model
 
-from backend.custom_types import OrderColumn
-from backend.db import models
-from backend.db.base import Base
-from backend.db.utils import get_db_order
 from backend.exceptions import ObjectNotFoundException
 
 logger = logging.getLogger(__name__)
-ModelType = TypeVar("ModelType", bound=Base)
+ModelType = TypeVar("ModelType", bound=Model)
 
 
 class BaseDAO(Generic[ModelType]):
-    def __init__(self, model: Type[ModelType], session: AsyncSession) -> None:
-        self.session = session
+    def __init__(self, model: Type[ModelType]) -> None:
         self.__model = model
-        self.default_options: list[Load] = []
+        self.related: list[str] = []
 
     @property
     def name(self) -> str:
         return self.__model.__name__
 
-    def _apply_sort(self, stmt: select, sort: list[OrderColumn]) -> select:
-        """Apply sorting to statement.
+    @property
+    def model(self) -> Type[ModelType]:
+        return self.__model
 
-        Args:
-            stmt (select): Statement.
-            sort (list[OrderColumn]): Sort order.
-
-        Returns:
-            select: Statement.
-        """
-
-        order_columns = []
-        group_by = [self.__model.id]
-        for param in sort:
-            column = getattr(self.__model, param.column.value)
-
-            # if column is a collection, we need to order by the count
-            if isinstance(column.impl, CollectionAttributeImpl):
-                stmt = stmt.outerjoin(column)
-                column = count(column)
-            # if column is a related field, we need to order by this field's caption
-            elif isinstance(column.impl, ScalarObjectAttributeImpl):
-                stmt = stmt.outerjoin(column)
-                column = BaseDAO._get_column(column)
-                group_by.append(column)
-
-            order = get_db_order(param.order)(column)
-            order_columns.append(order)
-
-        stmt = stmt.order_by(*order_columns).group_by(*group_by)
-        return stmt
-
-    @staticmethod
-    def _get_column(column: InstrumentedAttribute) -> InstrumentedAttribute:
-        # getting field to group by
-        table = inspect(column.class_)
-        relations = dict(table.relationships.items())
-        field = relations.get(column.key)
-        remote = field.entity.class_  # class with field
-
-        # The title of the field, e.g. "title" or "username"
-        # Usually it is the second column
-        title = remote.__table__.columns[1].name
-        column = getattr(remote, title)
-        return column
-
-    async def get_count(self, expr: list[ClauseElement] = None) -> int:
+    async def get_count(self, expr: Optional[dict[str, Any]] = None) -> int:
         """Get amount of objects.
 
         Args:
-            expr (Optional[ClauseElement | list[ClauseElement]]): Filter expression.
+            expr (dict): Filter expression.
 
         Returns:
             int: Amount of objects.
         """
 
         if expr is None:
-            expr = []
+            expr = {}
 
-        stmt = select(count(self.__model.id)).where(and_(True, *expr))
-        if self.name != "User" and any(
-            ["users" in str(x.left) for x in expr],  # type: ignore
-        ):
-            stmt = stmt.join(models.User)
-
-        result = await self.session.execute(stmt)
-        amount = result.unique().scalar_one()
+        amount = await self.__model.filter(**expr).count()
 
         logger.debug(f"Got amount of {self.name.lower()} {amount}")
         return amount
@@ -110,13 +51,9 @@ class BaseDAO(Generic[ModelType]):
             ModelType | None: ModelType object.
         """
 
-        stmt = (
-            select(self.__model)
-            .where(self.__model.id == obj_id)
-            .options(*self.default_options)
+        db_obj = await self.__model.get_or_none(id=obj_id).prefetch_related(
+            *self.related
         )
-        results = await self.session.execute(stmt)
-        db_obj = results.unique().scalar_one_or_none()
 
         if db_obj is not None:
             logger.debug(f"Got {self.name.lower()} {db_obj.id}")
@@ -125,14 +62,14 @@ class BaseDAO(Generic[ModelType]):
 
     async def get_multi(
         self,
-        expr: list[ClauseElement] = None,
+        expr: Optional[dict[str, Any]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> list[ModelType]:
         """Get multiple objects.
 
         Args:
-            expr (Optional[ClauseElement | list[ClauseElement]]): Filter expression.
+            expr (dict): Filter expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
 
@@ -141,71 +78,73 @@ class BaseDAO(Generic[ModelType]):
         """
 
         if expr is None:
-            expr = []
+            expr = {}
 
-        stmt = (
-            select(self.__model)
-            .where(and_(True, *expr))
-            .offset(offset)
-            .limit(limit)
-            .options(*self.default_options)
-        )
+        objects = await self.__model.filter(**expr).offset(offset).limit(limit)
 
-        if self.name != "User" and any(
-            ["users" in str(x.left) for x in expr],  # type: ignore
-        ):
-            stmt = stmt.join(models.User)
-
-        results = await self.session.execute(stmt)
-        objects = results.unique().scalars().all()
-
-        logger.debug(f"Got {len(objects)} {self.__model.__tablename__}")
+        logger.debug(f"Got {len(objects)} {self.name.lower()}")
         return objects
 
     async def get_ordered_multi(
         self,
-        expr: Optional[list[ClauseElement]] = None,
+        expr: Optional[dict[str, Any]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        sort: Optional[list[OrderColumn]] = None,
-    ) -> list[models.Platform]:
+        sort: Optional[list[str]] = None,
+    ) -> list[ModelType]:
         """Get multiple objects ordered by the given orders.
 
         Args:
-            expr (Optional[ClauseElement | list[ClauseElement]]): SQLAlchemy expression.
+            expr (Optional[dict]): SQLAlchemy expression.
             offset (Optional[int]): Offset.
             limit (Optional[int]): Limit.
-            sort (Optional[list[OrderColumn]]): Order columns.
+            sort (Optional[list[str]]): Order columns.
 
         Returns:
             list[ModelType]: Objects.
         """
 
         if expr is None:
-            expr = []
+            expr = {}
 
+        count_sorts: dict[str, Count] = {}
+        abs_sort = [x.lstrip("-") for x in sort]
+        for field in self.__model._meta.fetch_fields - self.__model._meta.fk_fields:
+            try:
+                i = abs_sort.index(field)
+            except ValueError:
+                continue
+            sort[i] += "_count"
+            count_sorts[sort[i].lstrip("-")] = Count(field)
+
+        group_by_sorts: list[str] = []
+        disjoined_sort = [x.lstrip("-").split("__")[0] for x in sort]
+        for field in self.__model._meta.fk_fields:
+            try:
+                i = disjoined_sort.index(field)
+            except ValueError:
+                continue
+            group_by_sorts.append(sort[i])
+
+        # TODO: fix
+
+        group_by_sorts = ["created_by_user__username"]
         stmt = (
-            select(self.__model)
-            .where(and_(True, *expr))
+            self.__model.filter(**expr)
             .offset(offset)
             .limit(limit)
-            .options(*self.default_options)
+            .annotate(**count_sorts)
+            .order_by(*sort)
+            .prefetch_related(*self.related)
         )
 
-        if (
-            self.name != "User"
-            and "created_by_user" not in [s.column.value for s in sort]
-            and any(["users" in str(x.left) for x in expr])
-        ):  # type: ignore
-            stmt = stmt.join(models.User)
+        if group_by_sorts:
+            stmt = stmt.group_by("id", *group_by_sorts).values()
 
-        if sort:
-            stmt = self._apply_sort(stmt, sort)
+        # print(stmt.sql())
+        objects = await stmt
 
-        results = await self.session.execute(stmt)
-        objects = results.unique().scalars().all()
-
-        logger.debug(f"Got {len(objects)} {self.__model.__tablename__}")
+        logger.debug(f"Got {len(objects)} {self.name.lower()}")
         return objects
 
     async def create_by_user(
@@ -223,10 +162,8 @@ class BaseDAO(Generic[ModelType]):
             ModelType: Created object.
         """
 
-        db_obj = self.__model(**obj_in, created_by_user_id=user_id)
-        self.session.add(db_obj)
-        await self.session.commit()
-        await self.session.refresh(db_obj)
+        db_obj = await self.__model.create(**obj_in, created_by_user_id=user_id)
+        await db_obj.fetch_related(*self.related)
 
         logger.debug(f"Created {self.name.lower()} {db_obj.id}")
         return db_obj
@@ -246,17 +183,12 @@ class BaseDAO(Generic[ModelType]):
             ModelType: Updated object.
         """
 
-        db_obj = await self.get(obj_id)
-        if not db_obj:
+        c = await self.__model.filter(id=obj_id).update(**obj_in)
+        if c != 1:
             logger.error(f"{self.name} {obj_id} not found")
             raise ObjectNotFoundException(obj_id)
 
-        for field in obj_in:
-            setattr(db_obj, field, obj_in[field])
-
-        self.session.add(db_obj)
-        await self.session.commit()
-        await self.session.refresh(db_obj)
+        db_obj = await self.get(obj_id)
 
         logger.debug(f"Updated {self.name.lower()} {db_obj.id}")
         return db_obj
@@ -268,14 +200,12 @@ class BaseDAO(Generic[ModelType]):
             obj_id (str): ID of object to delete.
         """
 
-        stmt = (
-            delete(self.__model)
-            .where(self.__model.id == obj_id)
-            .returning(self.__model.id)
-        )
+        c = await self.__model.filter(id=obj_id).delete()
 
-        result = await self.session.execute(stmt)
-        result.unique().scalar_one()
+        if c != 1:
+            logger.error(f"{self.name} {obj_id} not found")
+            raise ObjectNotFoundException(obj_id)
+
         logger.debug(f"Deleted {self.name.lower()} {obj_id}")
 
     async def delete_multi(self, obj_ids: list[str]) -> None:
@@ -285,15 +215,4 @@ class BaseDAO(Generic[ModelType]):
             obj_ids (list[str]): IDs of objects to delete.
         """
 
-        stmt = (
-            delete(self.__model)
-            .where(self.__model.id.in_(obj_ids))
-            .returning(self.__model.id)
-        )
-        results = await self.session.execute(stmt)
-        objects = results.scalars().all()
-
-        if len(objects) != len(obj_ids):
-            diff = set(obj_ids) - {str(x) for x in objects}
-            logger.error(f"Some {self.__model.__tablename__} not found: {diff}")
-            raise ObjectNotFoundException(f"{', '.join(diff)}")
+        c = await self.__model.filter(id__in=obj_ids).delete()

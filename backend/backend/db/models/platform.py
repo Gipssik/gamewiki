@@ -1,49 +1,20 @@
-import uuid
-
-from sqlalchemy import Column, ForeignKey, String, Table
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-
-from backend.db.base import Base
-
-game_platform = Table(
-    "game_platform",
-    Base.metadata,
-    Column(
-        "game_id",
-        ForeignKey("games.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    ),
-    Column(
-        "platform_id",
-        ForeignKey("platforms.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    ),
-)
+from tortoise import fields, models
 
 
-class Platform(Base):
-    __tablename__ = "platforms"
+class Platform(models.Model):
+    id = fields.UUIDField(pk=True, auto_generate=True, index=True)
+    title = fields.CharField(max_length=512, unique=True, index=True)
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    title = Column(String(255), unique=True, nullable=False, index=True)
-    created_by_user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id"),
-        nullable=False,
+    created_by_user: fields.ForeignKeyRelation["User"] = fields.ForeignKeyField(
+        "models.User",
+        related_name="created_platforms",
+        null=True,
+        on_delete=fields.SET_NULL,
     )
+    games: fields.ManyToManyRelation["Game"]
+    sales: fields.ReverseRelation["Sale"]
 
-    games = relationship(
-        "Game",
-        secondary=game_platform,
-        back_populates="platforms",
-        lazy="noload",
-    )
-    sales = relationship("Sale", back_populates="platform", lazy="noload")
-    created_by_user = relationship(
-        "User",
-        back_populates="created_platforms",
-        lazy="joined",
-    )
+
+from backend.db.models.game import Game  # noqa: E402
+from backend.db.models.sale import Sale  # noqa: E402
+from backend.db.models.user import User  # noqa: E402

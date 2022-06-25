@@ -1,29 +1,20 @@
-import datetime
-import uuid
-
-from sqlalchemy import Column, Date, DateTime, ForeignKey, String
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-
-from backend.db.base import Base
+from tortoise import fields, models
 
 
-class Company(Base):
-    __tablename__ = "companies"
+class Company(models.Model):
+    id = fields.UUIDField(pk=True, auto_generate=True, index=True)
+    title = fields.CharField(max_length=512, unique=True, index=True)
+    founded_at = fields.DateField()
+    created_at = fields.DatetimeField(auto_now_add=True)
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    title = Column(String(512), unique=True, nullable=False, index=True)
-    founded_at = Column(Date, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    created_by_user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id"),
-        nullable=False,
+    created_by_user: fields.ForeignKeyRelation["User"] = fields.ForeignKeyField(
+        "models.User",
+        related_name="created_companies",
+        null=True,
+        on_delete=fields.SET_NULL,
     )
+    games: fields.ManyToManyRelation["Game"]
 
-    games = relationship("Game", back_populates="created_by_company", lazy="noload")
-    created_by_user = relationship(
-        "User",
-        back_populates="created_companies",
-        lazy="joined",
-    )
+
+from backend.db.models.game import Game  # noqa: E402
+from backend.db.models.user import User  # noqa: E402

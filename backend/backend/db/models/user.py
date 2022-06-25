@@ -1,51 +1,25 @@
-import datetime
-import uuid
-
-import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-
-from backend.db.base import Base
+from tortoise import fields, models
 
 
-class User(Base):
-    __tablename__ = "users"
+class User(models.Model):
+    id = fields.UUIDField(pk=True, auto_generate=True, index=True)
+    username = fields.CharField(max_length=32, unique=True, index=True)
+    email = fields.CharField(max_length=128, unique=True, index=True)
+    hashed_password = fields.CharField(max_length=256)
+    is_superuser = fields.BooleanField(default=False)
+    is_primary = fields.BooleanField(default=False)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    salt = fields.CharField(1024)
 
-    id = sa.Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    username = sa.Column(sa.String(32), nullable=False, unique=True, index=True)
-    email = sa.Column(sa.String, nullable=False, unique=True, index=True)
-    hashed_password = sa.Column(sa.String, nullable=False)
-    is_superuser = sa.Column(sa.Boolean, default=False, nullable=False)
-    is_primary = sa.Column(sa.Boolean, default=False, nullable=False)
-    created_at = sa.Column(
-        sa.DateTime,
-        nullable=False,
-        default=datetime.datetime.utcnow,
-    )
-    salt = sa.Column(sa.String, nullable=False)
+    created_companies: fields.ReverseRelation["Company"]
+    created_platforms: fields.ReverseRelation["Platform"]
+    created_genres: fields.ReverseRelation["Genre"]
+    created_games: fields.ReverseRelation["Game"]
+    created_sales: fields.ReverseRelation["Sale"]
 
-    created_companies = relationship(
-        "Company",
-        back_populates="created_by_user",
-        lazy="noload",
-    )
-    created_platforms = relationship(
-        "Platform",
-        back_populates="created_by_user",
-        lazy="noload",
-    )
-    created_games = relationship(
-        "Game",
-        back_populates="created_by_user",
-        lazy="noload",
-    )
-    created_genres = relationship(
-        "Genre",
-        back_populates="created_by_user",
-        lazy="noload",
-    )
-    created_sales = relationship(
-        "Sale",
-        back_populates="created_by_user",
-        lazy="noload",
-    )
+
+from backend.db.models.company import Company  # noqa: E402
+from backend.db.models.game import Game  # noqa: E402
+from backend.db.models.genre import Genre  # noqa: E402
+from backend.db.models.platform import Platform  # noqa: E402
+from backend.db.models.sale import Sale  # noqa: E402

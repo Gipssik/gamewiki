@@ -1,38 +1,9 @@
-from functools import wraps
-from typing import Callable
-
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-
 from backend.db.dao import UserDAO
-from backend.settings import settings
 from backend.web.api.user.schema.user_create import UserCreate
 
 
-def get_db_engine() -> AsyncEngine:
-    db_url = str(settings.db_url)
-    return create_async_engine(db_url, isolation_level="AUTOCOMMIT")
-
-
-def db_session(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        engine = get_db_engine()
-        async_session = sessionmaker(
-            engine,
-            autocommit=False,
-            class_=AsyncSession,
-        )
-
-        async with engine.begin() as connection:
-            async with async_session(bind=connection) as session:
-                return await func(session, *args, **kwargs)
-
-    return wrapper
-
-
-async def get_user_dao(session: AsyncSession) -> UserDAO:
-    user_dao = UserDAO(session)
+async def get_user_dao() -> UserDAO:
+    user_dao = UserDAO()
     return user_dao
 
 

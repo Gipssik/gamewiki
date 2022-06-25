@@ -32,20 +32,20 @@ class CompanyOrderColumns(str, Enum):
     FOUNDED_AT = "founded_at"
     CREATED_AT = "created_at"
     GAMES = "games"
-    CREATED_BY_USER = "created_by_user"
+    CREATED_BY_USER__USERNAME = "created_by_user"
 
 
 class PlatformOrderColumns(str, Enum):
     TITLE = "title"
     GAMES = "games"
     SALES = "sales"
-    CREATED_BY_USER = "created_by_user"
+    CREATED_BY_USER__USERNAME = "created_by_user"
 
 
 class GenreOrderColumns(str, Enum):
     TITLE = "title"
     GAMES = "games"
-    CREATED_BY_USER = "created_by_user"
+    CREATED_BY_USER__USERNAME = "created_by_user"
 
 
 class GameOrderColumns(str, Enum):
@@ -55,7 +55,8 @@ class GameOrderColumns(str, Enum):
     SALES = "sales"
     PLATFORMS = "platforms"
     GENRES = "genres"
-    CREATED_BY_COMPANY = "created_by_company"
+    CREATED_BY_COMPANY__TITLE = "created_by_company"
+    CREATED_BY_USER__USERNAME = "created_by_user"
 
 
 class CommonQueries(BaseModel):

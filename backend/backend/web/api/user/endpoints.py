@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from tortoise.exceptions import IntegrityError
 
-from backend.custom_types import OrderColumn, UserOrderColumns
+from backend.custom_types import UserOrderColumns
 from backend.db.dao import UserDAO
 from backend.db.dependencies.order_validation import OrderValidation
 from backend.db.dependencies.user import get_current_superuser, get_current_user
@@ -19,7 +19,7 @@ router = APIRouter()
 async def get_multi(
     response: Response,
     queries: schema.UserQueries = Depends(),
-    sort: list[OrderColumn] = Depends(OrderValidation(UserOrderColumns)),
+    sort: list[str] = Depends(OrderValidation(UserOrderColumns)),
     user_dao: UserDAO = Depends(),
 ) -> list[User]:
     """Get list of users.
@@ -35,13 +35,15 @@ async def get_multi(
     """
 
     filters_dict = {
-        "username": User.username.ilike(f"%{queries.username}%"),
-        "email": User.email.ilike(f"%{queries.email}%"),
-        "is_superuser": User.is_superuser == queries.is_superuser,
-        "is_primary": User.is_primary == queries.is_primary,
+        "username": ("username__icontains", queries.username),
+        "email": ("email__icontains", queries.email),
+        "is_superuser": ("is_superuser", queries.is_superuser),
+        "is_primary": ("is_primary", queries.is_primary),
     }
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
-    filters_list = [filters_dict[key] for key in filters.keys()]
+    filters_list = {
+        filters_dict[key][0]: filters_dict[key][1] for key in filters.keys()
+    }
 
     amount = await user_dao.get_count(expr=filters_list)
     users = await user_dao.get_ordered_multi(
@@ -108,10 +110,10 @@ async def create(user: schema.UserCreate, user_dao: UserDAO = Depends()) -> User
     try:
         return await user_dao.create(user.dict())
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Username or email already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -154,10 +156,10 @@ async def update(
             detail="User not found",
         ) from error
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Username or email already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -182,13 +184,7 @@ async def delete_multi(
         None: None.
     """
 
-    try:
-        await user_dao.delete_multi([str(user_id) for user_id in user_ids])
-    except ObjectNotFoundException as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User(s) not found: {str(error)}",
-        ) from error
+    await user_dao.delete_multi([str(user_id) for user_id in user_ids])
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -217,7 +213,7 @@ async def delete(
 
     try:
         await user_dao.delete(str(user_id))
-    except NoResultFound as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",

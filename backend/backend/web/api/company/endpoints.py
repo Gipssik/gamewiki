@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from tortoise.exceptions import IntegrityError
 
-from backend.custom_types import CompanyOrderColumns, OrderColumn
+from backend.custom_types import CompanyOrderColumns
 from backend.db import models
 from backend.db.dao import CompanyDAO
 from backend.db.dependencies.order_validation import OrderValidation
@@ -20,7 +20,7 @@ router = APIRouter()
 async def get_multi(
     response: Response,
     queries: schema.CompanyQueries = Depends(),
-    sort: list[OrderColumn] = Depends(OrderValidation(CompanyOrderColumns)),
+    sort: list[str] = Depends(OrderValidation(CompanyOrderColumns)),
     company_dao: CompanyDAO = Depends(),
 ) -> list[Company]:
     """Get list of companies.
@@ -28,7 +28,7 @@ async def get_multi(
     Args:
         response (Response): Response.
         queries (CompanyQueries, optional): Query parameters.
-        sort (list[OrderColumn], optional): Order parameters.
+        sort (list[str], optional): Order parameters.
         company_dao (CompanyDAO, optional): Company DAO.
 
     Returns:
@@ -36,11 +36,16 @@ async def get_multi(
     """
 
     filters_dict = {
-        "title": Company.title.ilike(f"%{queries.title}%"),
-        "created_by_user": models.User.username.ilike(f"%{queries.created_by_user}%"),
+        "title": ("title__icontains", queries.title),
+        "created_by_user": (
+            "created_by_user__username__icontains",
+            queries.created_by_user,
+        ),
     }
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
-    filters_list = [filters_dict[key] for key in filters.keys()]
+    filters_list = {
+        filters_dict[key][0]: filters_dict[key][1] for key in filters.keys()
+    }
 
     amount = await company_dao.get_count(expr=filters_list)
     companies = await company_dao.get_ordered_multi(
@@ -93,15 +98,16 @@ async def create(
     """
 
     try:
+        print("qwe")
         return await company_dao.create_by_user(
             company.dict(),
             str(current_superuser.id),
         )
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Company already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -136,10 +142,10 @@ async def update(
             detail="Company not found",
         ) from error
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Company already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 

@@ -1,32 +1,29 @@
-import uuid
-
-from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-
-from backend.db.base import Base
+from tortoise import fields, models
 
 
-class Sale(Base):
-    __tablename__ = "sales"
-    __table_args__ = (
-        UniqueConstraint("game_id", "platform_id", name="_game_platform_uc"),
+class Sale(models.Model):
+    class Meta:
+        unique_together = (("game", "platform"),)
+
+    id = fields.UUIDField(pk=True, auto_generate=True, index=True)
+    amount = fields.BigIntField()
+
+    game: fields.ForeignKeyRelation["Game"] = fields.ForeignKeyField(
+        "models.Game",
+        related_name="sales",
+    )
+    platform: fields.ForeignKeyRelation["Platform"] = fields.ForeignKeyField(
+        "models.Platform",
+        related_name="sales",
+    )
+    created_by_user: fields.ForeignKeyRelation["User"] = fields.ForeignKeyField(
+        "models.User",
+        related_name="created_sales",
+        null=True,
+        on_delete=fields.SET_NULL,
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    amount = Column(Integer, nullable=False)
-    game_id = Column(UUID(as_uuid=True), ForeignKey("games.id"), nullable=False)
-    platform_id = Column(UUID(as_uuid=True), ForeignKey("platforms.id"), nullable=False)
-    created_by_user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id"),
-        nullable=False,
-    )
 
-    platform = relationship("Platform", back_populates="sales", lazy="noload")
-    game = relationship("Game", back_populates="sales", lazy="noload")
-    created_by_user = relationship(
-        "User",
-        back_populates="created_sales",
-        lazy="joined",
-    )
+from backend.db.models.game import Game  # noqa: E402
+from backend.db.models.platform import Platform  # noqa: E402
+from backend.db.models.user import User  # noqa: E402
