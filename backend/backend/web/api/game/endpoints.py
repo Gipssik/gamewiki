@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError
+from tortoise.exceptions import IntegrityError
 
-from backend.custom_types import GameOrderColumns, OrderColumn
+from backend.custom_types import GameOrderColumns
 from backend.db import models
 from backend.db.dao import GameDAO
 from backend.db.dependencies.order_validation import OrderValidation
@@ -20,7 +20,7 @@ router = APIRouter()
 async def get_multi(
     response: Response,
     queries: schema.GameQueries = Depends(),
-    sort: list[OrderColumn] = Depends(OrderValidation(GameOrderColumns)),
+    sort: list[str] = Depends(OrderValidation(GameOrderColumns)),
     game_dao: GameDAO = Depends(),
 ) -> list[Game]:
     """Get list of games.
@@ -28,7 +28,7 @@ async def get_multi(
     Args:
         response (Response): Response.
         queries (schema.GameQueries): Query parameters.
-        sort (list[OrderColumn], optional): Order parameters.
+        sort (list[str], optional): Order parameters.
         game_dao (GameDAO): Game DAO.
 
     Returns:
@@ -37,17 +37,23 @@ async def get_multi(
 
     # TODO: Check if need to fix
     filters_dict = {
-        "title": Game.title.ilike(f"%{queries.title}%"),
-        "created_by_user": models.User.username.ilike(f"%{queries.created_by_user}%"),
-        "created_by_company": models.Company.title.ilike(
-            f"%{queries.created_by_company}%",
+        "title": ("title__icontains", queries.title),
+        "created_by_user": (
+            "created_by_user__username__icontains",
+            queries.created_by_user,
+        ),
+        "created_by_company": (
+            "created_by_company__title__icontains",
+            queries.created_by_user,
         ),
     }
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
-    filters_list = [filters_dict[key] for key in filters.keys()]
+    filters_list = {
+        filters_dict[key][0]: filters_dict[key][1] for key in filters.keys()
+    }
 
     amount = await game_dao.get_count(expr=filters_list)
-    games = await game_dao.get_ordered_multi(
+    games = await game_dao.get_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
@@ -107,10 +113,15 @@ async def create(
             detail=f"Some object(s) not found: {str(error)}",
         )
     except IntegrityError as error:
-        if "Key (created_by_company_id)" in str(error):
+        if "not present" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Company not found",
+                detail=str(error).split(":  ")[1],
+            )
+        elif "already exists" in str(error):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -144,6 +155,18 @@ async def update(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Some object(s) not found: {str(error)}",
         )
+    except IntegrityError as error:
+        if "not present" in str(error):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error).split(":  ")[1],
+            )
+        elif "already exists" in str(error):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(error).split(":  ")[1],
+            )
+        raise error
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)

@@ -5,16 +5,6 @@ from fastapi import Query
 from pydantic import BaseModel
 
 
-class Order(str, Enum):
-    ASC = "asc"
-    DESC = "desc"
-
-
-class OrderColumn(BaseModel):
-    column: Enum  # Enum with possible names of columns to order by
-    order: Order
-
-
 class UserOrderColumns(str, Enum):
     USERNAME = "username"
     EMAIL = "email"

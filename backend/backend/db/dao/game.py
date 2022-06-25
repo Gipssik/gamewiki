@@ -13,6 +13,13 @@ class GameDAO(BaseDAO[models.Game]):
 
     def __init__(self) -> None:
         super().__init__(models.Game)
+        self.related = [
+            "created_by_user",
+            "created_by_company",
+            "platforms",
+            "genres",
+            "sales",
+        ]
 
     async def create_by_user(
         self,
@@ -29,7 +36,7 @@ class GameDAO(BaseDAO[models.Game]):
             models.Game: Game.
         """
 
-        db_game = self.model(
+        db_game = await self.model.create(
             title=game_in["title"],
             released_at=game_in["released_at"],
             created_by_company_id=game_in["created_by_company_id"],
@@ -44,7 +51,7 @@ class GameDAO(BaseDAO[models.Game]):
             platforms = await models.Platform.filter(id__in=game_in["platforms"])
             await db_game.platforms.add(*platforms)
 
-        await db_game.save()
+        await db_game.fetch_related(*self.related)
 
         logger.debug(f"Created game {db_game.id}")
         return db_game
@@ -77,7 +84,9 @@ class GameDAO(BaseDAO[models.Game]):
             for genre in db_game.genres:
                 if genre not in genres:
                     to_remove.append(genre)
-            await db_game.genres.remove(*to_remove)
+
+            if to_remove:
+                await db_game.genres.remove(*to_remove)
             game_in.pop("genres")
 
         if "platforms" in game_in:
@@ -88,13 +97,16 @@ class GameDAO(BaseDAO[models.Game]):
             for platform in db_game.platforms:
                 if platform not in platforms:
                     to_remove.append(platform)
-            await db_game.platforms.remove(*to_remove)
+
+            if to_remove:
+                await db_game.platforms.remove(*to_remove)
             game_in.pop("platforms")
 
         for field in game_in:
             setattr(db_game, field, game_in[field])
 
         await db_game.save()
+        db_game = await self.model.get(id=game_id).prefetch_related(*self.related)
 
         logger.debug(f"Updated game {db_game.id}")
         return db_game

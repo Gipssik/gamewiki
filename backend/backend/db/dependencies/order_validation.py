@@ -12,7 +12,6 @@ class OrderValidation:
             return []
 
         params = [s.lstrip("+") for s in sort.split(",")]
-        print(params)
         for i, param in enumerate(params):
             param_sign = "-" if param.startswith("-") else ""
             abs_param = param.lstrip("-")

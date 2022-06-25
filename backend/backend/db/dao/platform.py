@@ -7,3 +7,8 @@ class PlatformDAO(BaseDAO[models.Platform]):
 
     def __init__(self) -> None:
         super().__init__(models.Platform)
+        self.related = [
+            "created_by_user",
+            "sales",
+            "games",
+        ]

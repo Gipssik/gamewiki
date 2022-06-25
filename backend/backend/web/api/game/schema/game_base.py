@@ -10,3 +10,4 @@ class GameBase(BaseModel):
     released_at: Optional[date] = None
     platforms: Optional[set[UUID]] = None
     genres: Optional[set[UUID]] = None
+    created_by_company_id: Optional[UUID]

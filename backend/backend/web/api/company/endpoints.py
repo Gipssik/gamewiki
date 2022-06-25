@@ -48,7 +48,7 @@ async def get_multi(
     }
 
     amount = await company_dao.get_count(expr=filters_list)
-    companies = await company_dao.get_ordered_multi(
+    companies = await company_dao.get_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
@@ -98,7 +98,6 @@ async def create(
     """
 
     try:
-        print("qwe")
         return await company_dao.create_by_user(
             company.dict(),
             str(current_superuser.id),
@@ -195,7 +194,7 @@ async def delete(
 
     try:
         await company_dao.delete(str(company_id))
-    except NoResultFound as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Company not found",

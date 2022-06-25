@@ -65,31 +65,6 @@ class BaseDAO(Generic[ModelType]):
         expr: Optional[dict[str, Any]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> list[ModelType]:
-        """Get multiple objects.
-
-        Args:
-            expr (dict): Filter expression.
-            offset (Optional[int]): Offset.
-            limit (Optional[int]): Limit.
-
-        Returns:
-            list[ModelType]: List of objects.
-        """
-
-        if expr is None:
-            expr = {}
-
-        objects = await self.__model.filter(**expr).offset(offset).limit(limit)
-
-        logger.debug(f"Got {len(objects)} {self.name.lower()}")
-        return objects
-
-    async def get_ordered_multi(
-        self,
-        expr: Optional[dict[str, Any]] = None,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = 100,
         sort: Optional[list[str]] = None,
     ) -> list[ModelType]:
         """Get multiple objects ordered by the given orders.
@@ -117,18 +92,16 @@ class BaseDAO(Generic[ModelType]):
             sort[i] += "_count"
             count_sorts[sort[i].lstrip("-")] = Count(field)
 
-        group_by_sorts: list[str] = []
-        disjoined_sort = [x.lstrip("-").split("__")[0] for x in sort]
-        for field in self.__model._meta.fk_fields:
-            try:
-                i = disjoined_sort.index(field)
-            except ValueError:
-                continue
-            group_by_sorts.append(sort[i])
+        # group_by_sorts: list[str] = []
+        # disjoined_sort = [x.lstrip("-").split("__")[0] for x in sort]
+        # for field in self.__model._meta.fk_fields:
+        #     try:
+        #         i = disjoined_sort.index(field)
+        #     except ValueError:
+        #         continue
+        #     group_by_sorts.append(sort[i])
 
         # TODO: fix
-
-        group_by_sorts = ["created_by_user__username"]
         stmt = (
             self.__model.filter(**expr)
             .offset(offset)
@@ -138,10 +111,9 @@ class BaseDAO(Generic[ModelType]):
             .prefetch_related(*self.related)
         )
 
-        if group_by_sorts:
-            stmt = stmt.group_by("id", *group_by_sorts).values()
+        # if group_by_sorts:
+        #     stmt = stmt.group_by("id", *group_by_sorts).values()
 
-        # print(stmt.sql())
         objects = await stmt
 
         logger.debug(f"Got {len(objects)} {self.name.lower()}")

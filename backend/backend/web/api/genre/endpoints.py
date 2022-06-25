@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from tortoise.exceptions import IntegrityError
 
-from backend.custom_types import GenreOrderColumns, OrderColumn
+from backend.custom_types import GenreOrderColumns
 from backend.db import models
 from backend.db.dao import GenreDAO
 from backend.db.dependencies.order_validation import OrderValidation
@@ -20,7 +20,7 @@ router = APIRouter()
 async def get_multi(
     response: Response,
     queries: schema.GenreQueries = Depends(),
-    sort: list[OrderColumn] = Depends(OrderValidation(GenreOrderColumns)),
+    sort: list[str] = Depends(OrderValidation(GenreOrderColumns)),
     genre_dao: GenreDAO = Depends(),
 ) -> list[Genre]:
     """Get list of genres.
@@ -28,7 +28,7 @@ async def get_multi(
     Args:
         response (Response): Response.
         queries (GenreQueries, optional): Query parameters.
-        sort (list[OrderColumn], optional): Order parameters.
+        sort (list[str], optional): Order parameters.
         genre_dao (GenreDAO, optional): Genre DAO.
 
     Returns:
@@ -36,14 +36,19 @@ async def get_multi(
     """
 
     filters_dict = {
-        "title": Genre.title.ilike(f"%{queries.title}%"),
-        "created_by_user": models.User.username.ilike(f"%{queries.created_by_user}%"),
+        "title": ("title__icontains", queries.title),
+        "created_by_user": (
+            "created_by_user__username__icontains",
+            queries.created_by_user,
+        ),
     }
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
-    filters_list = [filters_dict[key] for key in filters.keys()]
+    filters_list = {
+        filters_dict[key][0]: filters_dict[key][1] for key in filters.keys()
+    }
 
     amount = await genre_dao.get_count(expr=filters_list)
-    genres = await genre_dao.get_ordered_multi(
+    genres = await genre_dao.get_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
@@ -95,10 +100,10 @@ async def create(
     try:
         return await genre_dao.create_by_user(genre.dict(), str(current_superuser.id))
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Genre already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -130,10 +135,10 @@ async def update(
             detail="Genre not found",
         )
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Genre already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -183,7 +188,7 @@ async def delete(
 
     try:
         await genre_dao.delete(str(genre_id))
-    except NoResultFound as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Genre not found",

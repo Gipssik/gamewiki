@@ -21,10 +21,10 @@ def runserver() -> None:
     )
 
 
-@app.command()
-def createprimaryuser():
+@app.command(name="createprimaryuser")
+def create_primary_user_command(username: str, password: str, email: str):
     """Creates a primary user."""
-    asyncio.run(create_primary_user())
+    asyncio.run(create_primary_user(username, password, email))
 
 
 if __name__ == "__main__":

@@ -1,8 +1,12 @@
+from tortoise import Tortoise  # it just works
+
+from backend.db.config import TORTOISE_CONFIG
 from backend.db.dao import UserDAO
 from backend.web.api.user.schema.user_create import UserCreate
 
 
 async def get_user_dao() -> UserDAO:
+    await Tortoise.init(config=TORTOISE_CONFIG)
     user_dao = UserDAO()
     return user_dao
 

@@ -7,3 +7,7 @@ class GenreDAO(BaseDAO[models.Genre]):
 
     def __init__(self) -> None:
         super().__init__(models.Genre)
+        self.related = [
+            "created_by_user",
+            "games",
+        ]

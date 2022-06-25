@@ -46,7 +46,7 @@ async def get_multi(
     }
 
     amount = await user_dao.get_count(expr=filters_list)
-    users = await user_dao.get_ordered_multi(
+    users = await user_dao.get_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,

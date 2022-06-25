@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from tortoise.exceptions import IntegrityError
 
-from backend.custom_types import OrderColumn, PlatformOrderColumns
+from backend.custom_types import PlatformOrderColumns
 from backend.db import models
 from backend.db.dao.platform import PlatformDAO
 from backend.db.dependencies.order_validation import OrderValidation
@@ -20,7 +20,7 @@ router = APIRouter()
 async def get_multi(
     response: Response,
     queries: schema.PlatformQueries = Depends(),
-    sort: list[OrderColumn] = Depends(OrderValidation(PlatformOrderColumns)),
+    sort: list[str] = Depends(OrderValidation(PlatformOrderColumns)),
     platform_dao: PlatformDAO = Depends(),
 ) -> list[Platform]:
     """Get list of platforms.
@@ -28,7 +28,7 @@ async def get_multi(
     Args:
         response (Response): Response.
         queries (schema.PlatformQueries): Query parameters.
-        sort (list[OrderColumn], optional): Order parameters.
+        sort (list[str], optional): Order parameters.
         platform_dao (PlatformDAO): Platform DAO.
 
     Returns:
@@ -36,14 +36,19 @@ async def get_multi(
     """
 
     filters_dict = {
-        "title": Platform.title.ilike(f"%{queries.title}%"),
-        "created_by_user": models.User.username.ilike(f"%{queries.created_by_user}%"),
+        "title": ("title__icontains", queries.title),
+        "created_by_user": (
+            "created_by_user__username__icontains",
+            queries.created_by_user,
+        ),
     }
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})
-    filters_list = [filters_dict[key] for key in filters.keys()]
+    filters_list = {
+        filters_dict[key][0]: filters_dict[key][1] for key in filters.keys()
+    }
 
     amount = await platform_dao.get_count(expr=filters_list)
-    platforms = await platform_dao.get_ordered_multi(
+    platforms = await platform_dao.get_multi(
         expr=filters_list,
         offset=queries.skip,
         limit=queries.limit,
@@ -98,10 +103,10 @@ async def create(
             str(current_superuser.id),
         )
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Platform already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -136,10 +141,10 @@ async def update(
             detail="Platform not found",
         )
     except IntegrityError as error:
-        if "duplicate key" in str(error.__cause__):
+        if "already exists" in str(error):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Platform already exists",
+                detail=str(error).split(":  ")[1],
             )
         raise error
 
@@ -191,7 +196,7 @@ async def delete(
 
     try:
         await platform_dao.delete(str(platform_id))
-    except NoResultFound as error:
+    except ObjectNotFoundException as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Platform not found",

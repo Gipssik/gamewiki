@@ -17,12 +17,11 @@ class UserDAO(BaseDAO[models.User]):
     def __init__(self) -> None:
         super().__init__(models.User)
         self.related = [
-            "created_genres__created_by_user",
-            "created_sales__created_by_user",
-            "created_games__created_by_user",
-            "created_platforms__created_by_user",
-            "created_companies__created_by_user",
-            "created_companies__games",
+            "created_genres",
+            "created_sales",
+            "created_games",
+            "created_platforms",
+            "created_companies",
         ]
 
     async def create(self, user_in: dict[str, Any]) -> models.User:
