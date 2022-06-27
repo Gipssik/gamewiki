@@ -27,7 +27,7 @@ async def get_multi(
     Args:
         response (Response): Response.
         queries (UserQueries, optional): User queries.
-        sort (list[OrderColumn], optional): Order parameters.
+        sort (list[str], optional): Order parameters.
         user_dao (UserDAO, optional): User DAO.
 
     Returns:
@@ -97,7 +97,7 @@ async def create(user: schema.UserCreate, user_dao: UserDAO = Depends()) -> User
     """Create new user.
 
     Args:
-        user (UserSchemaCreate): User data.
+        user (UserCreate): User data.
         user_dao (UserDAO, optional): User DAO.
 
     Raises:

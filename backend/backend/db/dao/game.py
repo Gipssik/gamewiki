@@ -18,7 +18,9 @@ class GameDAO(BaseDAO[models.Game]):
             "created_by_company",
             "platforms",
             "genres",
-            "sales",
+            "sales__game",
+            "sales__platform",
+            "sales__created_by_user",
         ]
 
     async def create_by_user(

@@ -4,4 +4,4 @@ from pydantic import BaseModel
 
 
 class SaleBase(BaseModel):
-    amount: Optional[float] = None
+    amount: Optional[int] = None

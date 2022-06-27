@@ -18,7 +18,9 @@ class UserDAO(BaseDAO[models.User]):
         super().__init__(models.User)
         self.related = [
             "created_genres",
-            "created_sales",
+            "created_sales__game",
+            "created_sales__platform",
+            "created_sales__created_by_user",
             "created_games",
             "created_platforms",
             "created_companies",

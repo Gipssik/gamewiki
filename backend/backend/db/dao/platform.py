@@ -9,6 +9,8 @@ class PlatformDAO(BaseDAO[models.Platform]):
         super().__init__(models.Platform)
         self.related = [
             "created_by_user",
-            "sales",
+            "sales__game",
+            "sales__platform",
+            "sales__created_by_user",
             "games",
         ]

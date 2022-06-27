@@ -49,6 +49,13 @@ class GameOrderColumns(str, Enum):
     CREATED_BY_USER__USERNAME = "created_by_user"
 
 
+class SaleOrderColumns(str, Enum):
+    AMOUNT = "amount"
+    GAME__TITLE = "game"
+    PLATFORM__TITLE = "platform"
+    CREATED_BY_USER__USERNAME = "created_by_user"
+
+
 class CommonQueries(BaseModel):
     skip: Optional[int] = Query(0, ge=0)
     limit: Optional[int] = Query(100, ge=1)
