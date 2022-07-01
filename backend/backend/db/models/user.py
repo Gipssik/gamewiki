@@ -16,8 +16,10 @@ class User(models.Model):
     created_genres: fields.ReverseRelation["Genre"]
     created_games: fields.ReverseRelation["Game"]
     created_sales: fields.ReverseRelation["Sale"]
+    created_backups: fields.ReverseRelation["Backup"]
 
 
+from backend.db.models.backup import Backup  # noqa: E402
 from backend.db.models.company import Company  # noqa: E402
 from backend.db.models.game import Game  # noqa: E402
 from backend.db.models.genre import Genre  # noqa: E402

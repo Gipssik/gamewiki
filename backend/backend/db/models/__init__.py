@@ -2,6 +2,7 @@
 import pkgutil
 from pathlib import Path
 
+from backend.db.models.backup import Backup
 from backend.db.models.company import Company
 from backend.db.models.game import Game
 from backend.db.models.genre import Genre
@@ -22,6 +23,7 @@ def load_all_models() -> None:
 
 
 __all__ = [
+    "Backup",
     "Company",
     "User",
     "Game",

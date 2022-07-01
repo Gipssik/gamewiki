@@ -3,7 +3,7 @@ from backend.settings import settings
 MODELS_PATH = "backend.db.models."
 MODELS_MODULES: list[str] = [  # noqa: WPS407
     MODELS_PATH + model
-    for model in ["user", "company", "platform", "genre", "game", "sale"]
+    for model in ["user", "company", "platform", "genre", "game", "sale", "backup"]
 ]
 
 TORTOISE_CONFIG = {  # noqa: WPS407

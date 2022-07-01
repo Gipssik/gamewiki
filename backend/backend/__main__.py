@@ -1,6 +1,4 @@
 import asyncio
-import datetime
-import subprocess
 
 import typer
 import uvicorn
@@ -9,20 +7,6 @@ from backend.cli import create_primary_user
 from backend.settings import settings
 
 app = typer.Typer()
-
-
-@app.command()
-def backup() -> None:
-    """Backups a database"""
-    filename = f"backup-{datetime.datetime.utcnow()}.sql".replace(" ", "T")
-    cmd = (
-        f"pg_dump -f {filename} -F p -h {settings.db_host}"
-        f" -U {settings.db_user} {settings.db_base}".split()
-    )
-    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-
-    popen.stdout.close()
-    popen.wait()
 
 
 @app.command()

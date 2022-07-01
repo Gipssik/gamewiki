@@ -1,3 +1,4 @@
+from backend.db.dao.backup import BackupDAO
 from backend.db.dao.company import CompanyDAO
 from backend.db.dao.game import GameDAO
 from backend.db.dao.genre import GenreDAO
@@ -10,4 +11,5 @@ __all__ = [
     "PlatformDAO",
     "GenreDAO",
     "GameDAO",
+    "BackupDAO",
 ]

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import AnyHttpUrl, BaseModel
 
 
 class UserOrderColumns(str, Enum):
@@ -54,6 +54,18 @@ class SaleOrderColumns(str, Enum):
     GAME__TITLE = "game"
     PLATFORM__TITLE = "platform"
     CREATED_BY_USER__USERNAME = "created_by_user"
+
+
+class BackupOrderColumns(str, Enum):
+    TITLE = "title"
+    URL = "url"
+    CREATED_AT = "created_at"
+    CREATED_BY_USER__USERNAME = "created_by_user"
+
+
+class CloudinaryResponse(BaseModel):
+    url: AnyHttpUrl
+    original_filename: str
 
 
 class CommonQueries(BaseModel):

@@ -17,6 +17,7 @@ class UserDAO(BaseDAO[models.User]):
     def __init__(self) -> None:
         super().__init__(models.User)
         self.related = [
+            "created_backups",
             "created_genres",
             "created_sales__game",
             "created_sales__platform",

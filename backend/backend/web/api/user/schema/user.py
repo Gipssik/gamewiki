@@ -1,5 +1,6 @@
 from pydantic import validator
 
+from backend.web.api.backup.schema import BackupInDB
 from backend.web.api.company.schema import CompanyInDB
 from backend.web.api.game.schema import GameInDB
 from backend.web.api.genre.schema import GenreInDB
@@ -14,8 +15,10 @@ class User(UserInDB):
     created_games: list[GameInDB] = []
     created_genres: list[GenreInDB] = []
     created_sales: list[Sale] = []
+    created_backups: list[BackupInDB] = []
 
     @validator(
+        "created_backups",
         "created_companies",
         "created_platforms",
         "created_games",

@@ -23,6 +23,7 @@ services:
       BACKEND_DB_USER: backend
       BACKEND_DB_PASS: backend
       BACKEND_DB_BASE: backend
+      PGPASSWORD: backend
 
   db:
     image: postgres:13
