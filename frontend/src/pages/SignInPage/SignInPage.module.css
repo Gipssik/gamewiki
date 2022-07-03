@@ -1,0 +1,21 @@
+.container {
+    padding: 60px 15px 0 15px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.container h1{
+    font-size: 50px;
+    color: #439775;
+    text-align: center;
+}
+
+.container button{
+    background: #439775;
+    border-color: #439775;
+}
+
+.container button:focus, .container button:hover{
+    background: #4cca95;
+    border-color: #439775;
+}

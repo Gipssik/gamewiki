@@ -1,0 +1,141 @@
+body {
+    margin: 0;
+    font-family: Helvetica, sans-serif;
+    background-color: #f4f4f4;
+}
+
+a {
+    color: #000;
+}
+
+.user-icon {
+    font-size: 230%;
+    margin: 0 20px;
+}
+
+/* header */
+
+.header {
+    background-color: #fff;
+    box-shadow: 1px 1px 4px 0 rgba(0,0,0,.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 3;
+}
+
+.header ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.header li a {
+    padding: 20px 20px;
+    border-right: 1px solid #f4f4f4;
+    text-decoration: none;
+    display: flex;
+    gap: 10px;
+}
+
+.header li a:hover,
+.header input:hover {
+    background-color: #f4f4f4;
+}
+
+/* menu */
+
+.header .menu {
+    clear: both;
+    max-height: 0;
+    transition: max-height .2s ease-out;
+}
+
+/* menu icon */
+
+.header label {
+    cursor: pointer;
+    display: inline-block;
+    float: right;
+    padding: 28px 20px;
+    position: relative;
+    user-select: none;
+}
+
+.header label span {
+    background: #333;
+    display: block;
+    height: 2px;
+    position: relative;
+    transition: background .2s ease-out;
+    width: 18px;
+}
+
+.header label span:before,
+.header label span:after {
+    background: #333;
+    content: '';
+    display: block;
+    height: 100%;
+    position: absolute;
+    transition: all .2s ease-out;
+    width: 100%;
+}
+
+.header label span:before {
+    top: 5px;
+}
+
+.header label span:after {
+    top: -5px;
+}
+
+/* menu btn */
+
+.header input {
+    display: none;
+}
+
+.header input:checked ~ .menu {
+    max-height: 90vh;
+    overflow-y: scroll;
+}
+
+.header input:checked ~ label span {
+    background: transparent;
+}
+
+.header input:checked ~ label span:before {
+    transform: rotate(-45deg);
+}
+
+.header input:checked ~ label span:after {
+    transform: rotate(45deg);
+}
+
+.header input:checked ~ label:not(.steps) span:before,
+.header input:checked ~ label:not(.steps) span:after {
+    top: 0;
+}
+
+/* 80em = 1280px */
+
+@media (min-width: 80em) {
+    .header li {
+        float: left;
+    }
+    .header li a {
+        padding: 20px 30px;
+    }
+    .header .menu {
+        clear: none;
+        float: right;
+        max-height: none;
+    }
+    .header label {
+        display: none;
+    }
+}

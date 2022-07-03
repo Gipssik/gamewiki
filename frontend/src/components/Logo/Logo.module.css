@@ -1,0 +1,11 @@
+.logo {
+    display: block;
+    float: left;
+    font-size: 2em !important;
+    padding: 10px 20px;
+    text-decoration: none;
+}
+
+.logo span{
+    color: #439775;
+}

@@ -11,7 +11,7 @@ from backend.web.api.sale.endpoints import router as sale_router
 from backend.web.api.user.endpoints import router as user_router
 
 api_router = APIRouter()
-api_router.include_router(monitoring_router)
+api_router.include_router(monitoring_router, prefix="/health", tags=["health"])
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(backup_router, prefix="/backups", tags=["backups"])
 api_router.include_router(user_router, prefix="/users", tags=["users"])

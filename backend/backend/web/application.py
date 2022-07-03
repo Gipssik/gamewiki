@@ -23,7 +23,7 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
     default_response_class=UJSONResponse,
-    generate_request_id=custom_generate_unique_id,
+    generate_unique_id_function=custom_generate_unique_id,
 )
 
 app.on_event("startup")(startup(app))
