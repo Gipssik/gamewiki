@@ -12,11 +12,9 @@ const root = ReactDOM.createRoot(
 );
 
 root.render(
-  <React.StrictMode>
-      <Provider store={store}>
-          <ConfigProvider locale={enUS}>
-              <App />
-          </ConfigProvider>
-      </Provider>
-  </React.StrictMode>
+  <Provider store={store}>
+      <ConfigProvider locale={enUS}>
+          <App />
+      </ConfigProvider>
+  </Provider>
 );

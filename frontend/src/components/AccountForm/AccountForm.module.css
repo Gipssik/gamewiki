@@ -1,0 +1,23 @@
+.container {
+    padding: 0 15px;
+    min-width: 450px;
+    width: 500px;
+    height: fit-content;
+}
+
+.container button:first-child{
+    background: #439775;
+    border-color: #439775;
+}
+
+.container button:first-child:focus, .container button:first-child:hover{
+    background: #4cca95;
+    border-color: #439775;
+}
+
+.container .buttons {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}

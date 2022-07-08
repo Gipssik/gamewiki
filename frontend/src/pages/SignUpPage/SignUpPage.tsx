@@ -1,9 +1,10 @@
 import React from 'react';
 import styles from "./SignUpPage.module.css";
-import {Button, Form, Input, Modal} from "antd";
+import {Button, Divider, Form, Input, Modal, notification} from "antd";
 import {Navigate, useNavigate} from "react-router-dom";
 import {useAppSelector} from "../../store";
 import {ApiError, UserCreate, UsersService} from "../../client";
+import {getPrettifiedErrorString} from "../../utils";
 
 const SignUpPage: React.FC = () => {
 	const navigate = useNavigate()
@@ -12,10 +13,9 @@ const SignUpPage: React.FC = () => {
 	const register = (values: UserCreate) => {
 		UsersService.create(values)
 			.then(user => {
-				Modal.success({
-					closable: true,
-					title: "Success!",
-					content: `User ${values.username} was created successfully!`
+				notification.success({
+					message: "Success",
+					description: "User was created successfully!"
 				})
 				navigate('/sign-in')
 			})
@@ -23,11 +23,7 @@ const SignUpPage: React.FC = () => {
 				Modal.error({
 					closable: true,
 					title: "Error",
-					content:
-						error.body.detail
-							.replaceAll('(', '')
-							.replaceAll(')', '')
-							.replaceAll('=', ' ')
+					content: getPrettifiedErrorString(error.body.detail)
 				})
 			})
 	}
@@ -38,6 +34,7 @@ const SignUpPage: React.FC = () => {
 	return (
 		<div className={styles.container}>
 			<h1>Sign Up</h1>
+			<Divider/>
 			<Form
 				name="basic"
 				labelCol={{
@@ -45,9 +42,6 @@ const SignUpPage: React.FC = () => {
 				}}
 				wrapperCol={{
 					span: 16,
-				}}
-				initialValues={{
-					remember: true,
 				}}
 				onFinish={register}
 				autoComplete="off"
@@ -63,6 +57,10 @@ const SignUpPage: React.FC = () => {
 						{
 							min: 4,
 							message: "Username must be at least 4 characters long"
+						},
+						{
+							max: 20,
+							message: "Username must be maximum 20 characters long"
 						},
 						{
 							pattern: /^\w+$/,

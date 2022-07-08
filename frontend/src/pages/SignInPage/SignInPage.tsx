@@ -1,5 +1,5 @@
 import React from 'react';
-import {Button, Form, Input, Modal} from 'antd';
+import {Button, Divider, Form, Input, Modal} from 'antd';
 import styles from './SignInPage.module.css'
 import {AuthService, Body_auth_login_access_token, UsersService} from "../../client";
 import {authActions, useAppDispatch, useAppSelector} from "../../store";
@@ -39,6 +39,7 @@ const SignInPage = () => {
 	return (
 		<div className={styles.container}>
 			<h1>Sign In</h1>
+			<Divider/>
 			<Form
 				name="basic"
 				labelCol={{
@@ -46,9 +47,6 @@ const SignInPage = () => {
 				}}
 				wrapperCol={{
 					span: 16,
-				}}
-				initialValues={{
-					remember: true,
 				}}
 				onFinish={login}
 				autoComplete="off"
@@ -64,6 +62,10 @@ const SignInPage = () => {
 						{
 							min: 4,
 							message: "Username must be at least 4 characters long"
+						},
+						{
+							max: 20,
+							message: "Username must be maximum 20 characters long"
 						},
 						{
 							pattern: /^\w+$/,

@@ -1,0 +1,10 @@
+.container {
+    min-width: 350px;
+    height: fit-content;
+}
+
+.container h2 {
+    font-size: 25px;
+    color: #439775;
+    text-align: center;
+}
