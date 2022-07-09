@@ -11,7 +11,6 @@ type Page = {
 }
 
 const pages: Page[] = [
-	{title: "Users", path: "/users"},
 	{title: "Companies", path: "/companies"},
 	{title: "Platforms", path: "/platforms"},
 	{title: "Genres", path: "/genres"},
@@ -46,6 +45,14 @@ const Navbar: FC = () => {
 			<input ref={checkbox} type="checkbox" id="menu-btn"/>
 			<label htmlFor="menu-btn"><span></span></label>
 			<ul className={styles.menu}>
+				{
+					me && me.is_superuser ?
+						<li onClick={onNavbarLinkClick}>
+							<Link to={'/users'}>Users</Link>
+						</li>
+						:
+						null
+				}
 				{
 					pages.map(x => <li onClick={onNavbarLinkClick} key={x.path}><Link to={x.path}>{x.title}</Link></li>)
 				}

@@ -6,13 +6,6 @@
     padding-bottom: 50px;
 }
 
-.title{
-    font-size: 40px;
-    color: #439775;
-    text-align: center;
-    padding-top: 20px;
-}
-
 @media screen and (max-width: 900px) {
     .container{
         display: flex;
