@@ -9,12 +9,14 @@ class UserOrderColumns(str, Enum):
     USERNAME = "username"
     EMAIL = "email"
     IS_SUPERUSER = "is_superuser"
+    IS_PRIMARY = "is_primary"
     CREATED_AT = "created_at"
     CREATED_COMPANIES = "created_companies"
     CREATED_PLATFORMS = "created_platforms"
     CREATED_GAMES = "created_games"
     CREATED_GENRES = "created_genres"
     CREATED_SALES = "created_sales"
+    CREATED_BACKUPS = "created_backups"
 
 
 class CompanyOrderColumns(str, Enum):

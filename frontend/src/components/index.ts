@@ -5,3 +5,5 @@ export { CreatedObjects } from "./CreatedObjects";
 export { Title } from "./Title";
 export { Container } from "./Container";
 export { Loader } from "./Loader";
+export { Panel } from "./Panel";
+export { UserEditForm } from "./UserEditForm";
