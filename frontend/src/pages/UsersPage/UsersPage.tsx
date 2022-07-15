@@ -1,163 +1,31 @@
-import { CheckOutlined, CloseOutlined, EditOutlined, SelectOutlined } from "@ant-design/icons";
 import { Button, Input, message, Select, Space, Table } from "antd";
 import modal from "antd/lib/modal";
-import type { ColumnsType, TablePaginationConfig } from "antd/lib/table";
+import type { TablePaginationConfig } from "antd/lib/table";
 import type { FilterValue, SorterResult, SortOrder } from "antd/lib/table/interface";
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { User, UsersService } from "../../client";
+import { UsersColumns } from "../../columns";
 import { Container, Panel, Title } from "../../components";
 import { useAppDispatch, useAppSelector, usersActions } from "../../store";
-import { fetchLimit } from "../../utils";
-import styles from "./UsersPage.module.css";
-
-const columns: ColumnsType<User> = [
-  {
-    title: "Edit",
-    align: "center",
-    render: (value: any, record: User) => (
-      <Link className={styles.icon} to={`/users/${record.username}/edit`}>
-        <EditOutlined />
-      </Link>
-    ),
-  },
-  {
-    title: "Open",
-    align: "center",
-    render: (value: any, record: User) => (
-      <Link className={styles.icon} to={`/users/${record.username}`}>
-        <SelectOutlined />
-      </Link>
-    ),
-  },
-  {
-    title: "Username",
-    dataIndex: "username",
-    key: "username",
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Email",
-    dataIndex: "email",
-    key: "email",
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Is Superuser",
-    dataIndex: "is_superuser",
-    key: "is_superuser",
-    render: (value: boolean) => (value ? <CheckOutlined /> : <CloseOutlined />),
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Is Primary",
-    dataIndex: "is_primary",
-    key: "is_primary",
-    render: (value: boolean) => (value ? <CheckOutlined /> : <CloseOutlined />),
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created At",
-    dataIndex: "created_at",
-    key: "created_at",
-    render: (value: Date) => new Date(value).toUTCString(),
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created Companies",
-    dataIndex: "created_companies",
-    key: "created_companies",
-    render: (value: Array<Object>) => value.length,
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created Platforms",
-    dataIndex: "created_platforms",
-    key: "created_platforms",
-    render: (value: Array<Object>) => value.length,
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created Games",
-    dataIndex: "created_games",
-    key: "created_games",
-    render: (value: Array<Object>) => value.length,
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created Genres",
-    dataIndex: "created_genres",
-    key: "created_genres",
-    render: (value: Array<Object>) => value.length,
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created Sales",
-    dataIndex: "created_sales",
-    key: "created_sales",
-    render: (value: Array<Object>) => value.length,
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-  {
-    title: "Created Backups",
-    dataIndex: "created_backups",
-    key: "created_backups",
-    render: (value: Array<Object>) => value.length,
-    align: "center",
-    sorter: {
-      multiple: 1,
-    },
-  },
-];
+import { fetchLimit, getSign } from "../../utils";
 
 const UsersPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const users = useAppSelector((s) => s.users.users);
+  const { users, pagination } = useAppSelector((s) => s.users);
   const me = useAppSelector((s) => s.auth.me);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const hasSelected = selectedRowKeys.length > 0;
   const [isUsersLoading, setIsUsersLoading] = useState(true);
-  const [pagination, setPagination] = useState<TablePaginationConfig>({
-    current: 1,
-    pageSize: fetchLimit,
-    position: ["bottomCenter"],
-  });
   const [searchUsername, setSearchUsername] = useState<string>();
   const [searchEmail, setSearchEmail] = useState<string>();
   const [searchIsSuperuser, setSearchIsSuperuser] = useState<boolean>();
   const [searchIsPrimary, setSearchIsPrimary] = useState<boolean>();
   const [sortParameters, setSortParameters] = useState<string | undefined>(undefined);
   const [skipParameter, setSkipParameter] = useState<number>(0);
+
+  const setPagination = (newPagination: TablePaginationConfig) => {
+    dispatch(usersActions.setPagination({ pagination: newPagination }));
+  };
 
   const fetchUsers = (
     skip?: number,
@@ -183,8 +51,6 @@ const UsersPage: React.FC = () => {
         setIsUsersLoading(false);
       });
   };
-
-  const getSign = (t: SortOrder) => (t === "ascend" ? "+" : "-");
 
   const handleTableChange = (
     newPagination: TablePaginationConfig,
@@ -248,9 +114,8 @@ const UsersPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!users) {
-      fetchUsers(0, fetchLimit);
-    } else setIsUsersLoading(false);
+    if (!users) fetchUsers(0, fetchLimit);
+    else setIsUsersLoading(false);
   }, [users]);
 
   return (
@@ -298,8 +163,8 @@ const UsersPage: React.FC = () => {
             Search
           </Button>
         </Space>
-        <div>
-          <span style={{ marginRight: 8 }}>{hasSelected ? `Selected ${selectedRowKeys.length} items` : ""}</span>
+        <Space>
+          <span>{hasSelected ? `Selected ${selectedRowKeys.length} items` : ""}</span>
           <Button
             type="primary"
             danger
@@ -314,13 +179,13 @@ const UsersPage: React.FC = () => {
           >
             Delete
           </Button>
-        </div>
+        </Space>
       </Panel>
 
       <Table
         dataSource={users || undefined}
         rowKey={(record) => record.id}
-        columns={columns}
+        columns={UsersColumns}
         bordered
         size="small"
         loading={isUsersLoading}

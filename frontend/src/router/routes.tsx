@@ -1,5 +1,5 @@
 import React from "react";
-import { AccountPage, PageNotFound, SignInPage, SignUpPage, UsersPage } from "../pages";
+import { AccountPage, BackupsPage, EditUserPage, PageNotFound, SignInPage, SignUpPage, UsersPage } from "../pages";
 
 type Route = {
   path: string;
@@ -14,4 +14,8 @@ export const publicRoutes: Route[] = [
 
 export const authenticatedRoutes: Route[] = [{ path: "/account", component: <AccountPage /> }];
 
-export const superuserRoutes: Route[] = [{ path: "/users", component: <UsersPage /> }];
+export const superuserRoutes: Route[] = [
+  { path: "/users", component: <UsersPage /> },
+  { path: "/users/:id/edit", component: <EditUserPage /> },
+  { path: "/backups", component: <BackupsPage /> },
+];

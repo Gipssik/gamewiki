@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { TablePaginationConfig } from "antd";
-import { User } from "../client";
+import { Backup } from "../client";
 import { fetchLimit } from "../utils";
 
 const initialState = {
-  users: null as User[] | null,
+  backups: null as Backup[] | null,
   pagination: {
     current: 1,
     pageSize: fetchLimit,
@@ -14,12 +14,12 @@ const initialState = {
 
 type State = typeof initialState;
 
-const usersSlice = createSlice({
-  name: "users",
+const backupsSlice = createSlice({
+  name: "backups",
   initialState,
   reducers: {
-    setAll: (state: State, action: PayloadAction<{ users: User[] }>) => {
-      state.users = [...action.payload.users];
+    setAll: (state: State, action: PayloadAction<{ backups: Backup[] }>) => {
+      state.backups = [...action.payload.backups];
     },
     setPagination: (state: State, action: PayloadAction<{ pagination: TablePaginationConfig }>) => {
       state.pagination = { ...state.pagination, ...action.payload.pagination };
@@ -27,5 +27,5 @@ const usersSlice = createSlice({
   },
 });
 
-export const usersActions = usersSlice.actions;
-export const usersReducer = usersSlice.reducer;
+export const backupsActions = backupsSlice.actions;
+export const backupsReducer = backupsSlice.reducer;
