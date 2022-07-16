@@ -5,3 +5,7 @@ export { AccountPage } from "./AccountPage";
 export { UsersPage } from "./UsersPage";
 export { EditUserPage } from "./EditUserPage";
 export { BackupsPage } from "./BackupsPage";
+export { CompaniesPage } from "./CompaniesPage";
+export { EditCompanyPage } from "./EditCompanyPage";
+export { CreateCompanyPage } from "./CreateCompanyPage";
+export { CompanyPage } from "./CompanyPage";

@@ -1,3 +1,4 @@
+import { DeleteOutlined, PlusOutlined, RollbackOutlined, SyncOutlined } from "@ant-design/icons";
 import { Button, message, Space, Table, TablePaginationConfig } from "antd";
 import modal from "antd/lib/modal";
 import { FilterValue, SorterResult } from "antd/lib/table/interface";
@@ -6,7 +7,7 @@ import { Backup, BackupsService } from "../../client";
 import { BackupsColumns } from "../../columns";
 import { Container, Panel, Title } from "../../components";
 import { backupsActions, useAppDispatch, useAppSelector } from "../../store";
-import { fetchLimit, getSign } from "../../utils";
+import { fetchLimit, getSign, getSkip } from "../../utils";
 
 export const BackupsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -16,7 +17,6 @@ export const BackupsPage: React.FC = () => {
   const isOneSelected = selectedRowKeys.length === 1;
   const [isBackupsLoading, setIsBackupsLoading] = useState(true);
   const [sortParameters, setSortParameters] = useState<string | undefined>(undefined);
-  const [skipParameter, setSkipParameter] = useState<number>(0);
 
   const setPagination = (newPagination: TablePaginationConfig) => {
     dispatch(backupsActions.setPagination({ pagination: newPagination }));
@@ -59,7 +59,7 @@ export const BackupsPage: React.FC = () => {
     filters: Record<string, FilterValue | null>,
     sorter: SorterResult<Backup> | SorterResult<Backup>[]
   ) => {
-    let skip = newPagination.current && (newPagination.current - 1) * fetchLimit;
+    let skip = getSkip(newPagination);
     let sorts: string | undefined;
     if (sorter && sorter instanceof Array) {
       sorts = sorter.map((sort) => getSign(sort.order || null) + sort.field).join(",");
@@ -68,13 +68,12 @@ export const BackupsPage: React.FC = () => {
     }
 
     setSortParameters(sorts);
-    setSkipParameter(skip || 0);
 
     fetchBackups(skip, fetchLimit, sorts, newPagination);
   };
 
   const refresh = () => {
-    let skip = pagination.current && (pagination.current - 1) * fetchLimit;
+    let skip = getSkip(pagination);
     setSelectedRowKeys([]);
     fetchBackups(skip, fetchLimit, sortParameters);
   };
@@ -111,10 +110,11 @@ export const BackupsPage: React.FC = () => {
       <Title>Backups</Title>
       <Panel>
         <Space>
-          <Button loading={isBackupsLoading} onClick={refresh}>
+          <Button icon={<SyncOutlined />} loading={isBackupsLoading} onClick={refresh}>
             Refresh
           </Button>
           <Button
+            icon={<PlusOutlined />}
             type="primary"
             loading={isBackupsLoading}
             onClick={() => {
@@ -130,6 +130,7 @@ export const BackupsPage: React.FC = () => {
         <Space>
           <span>{hasSelected ? `Selected ${selectedRowKeys.length} items` : ""}</span>
           <Button
+            icon={<DeleteOutlined />}
             type="primary"
             danger
             onClick={() => {
@@ -144,6 +145,7 @@ export const BackupsPage: React.FC = () => {
             Delete
           </Button>
           <Button
+            icon={<RollbackOutlined />}
             onClick={() => {
               modal.confirm({
                 title: "Are you sure you want to apply backup? A lot of data could be lost!",
@@ -153,7 +155,7 @@ export const BackupsPage: React.FC = () => {
             disabled={!isOneSelected}
             loading={isBackupsLoading}
           >
-            Apply
+            Restore
           </Button>
         </Space>
       </Panel>

@@ -7,3 +7,4 @@ export { Container } from "./Container";
 export { Loader } from "./Loader";
 export { Panel } from "./Panel";
 export { UserEditForm } from "./UserEditForm";
+export { CompanyEditForm } from "./CompanyEditForm";

@@ -36,9 +36,9 @@ export const EditUserPage: React.FC = () => {
   else if (!isUserLoading && userToEdit && userToEdit.is_primary) return <PageNotFound />;
 
   return (
-    <div>
+    <>
       <Title>Edit user {userToEdit?.username}</Title>
       {userToEdit ? <UserEditForm user={userToEdit} /> : null}
-    </div>
+    </>
   );
 };

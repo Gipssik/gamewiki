@@ -1,0 +1,23 @@
+.container{
+  max-width: 600px;
+  min-width: 400px;
+  margin: 0 auto;
+  padding: 0 10px;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.datatable {
+  font-size: large;
+}
+
+.datatable td {
+  padding: 10px;
+}
+
+.datatable tr td:first-child {
+  font-weight: bold;
+  color: #439775;
+  text-align: right;
+}

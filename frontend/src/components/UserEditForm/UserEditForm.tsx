@@ -1,7 +1,8 @@
-import { Button, Form, Input, message, notification, Switch } from "antd";
+import { Button, Form, Input, message, Modal, notification, Switch } from "antd";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { User, UsersService, UserUpdate } from "../../client";
+import { getPrettifiedErrorString } from "../../utils";
 import styles from "./UserEditForm.module.css";
 
 type Props = {
@@ -42,8 +43,11 @@ export const UserEditForm: React.FC<Props> = ({ user }) => {
           navigate("/users");
         })
         .catch((error) => {
-          console.log(error);
-          message.error(error);
+          Modal.error({
+            closable: true,
+            title: "Error",
+            content: getPrettifiedErrorString(error.body.detail),
+          });
         });
     }
   };
