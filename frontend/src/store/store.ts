@@ -3,6 +3,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import { authReducer } from "./auth.slice";
 import { backupsReducer } from "./backups.slice";
 import { companiesReducer } from "./companies.slice";
+import { platformsReducer } from "./platforms.slice";
 import { usersReducer } from "./users.slice";
 
 export const store = configureStore({
@@ -11,6 +12,7 @@ export const store = configureStore({
     users: usersReducer,
     backups: backupsReducer,
     companies: companiesReducer,
+    platforms: platformsReducer,
   },
 });
 

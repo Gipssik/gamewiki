@@ -5,9 +5,13 @@ import {
   CompaniesPage,
   CompanyPage,
   CreateCompanyPage,
+  CreatePlatformPage,
   EditCompanyPage,
+  EditPlatformPage,
   EditUserPage,
   PageNotFound,
+  PlatformPage,
+  PlatformsPage,
   SignInPage,
   SignUpPage,
   UsersPage,
@@ -23,6 +27,8 @@ export const publicRoutes: Route[] = [
   { path: "/sign-up", component: <SignUpPage /> },
   { path: "/companies", component: <CompaniesPage /> },
   { path: "/companies/:id", component: <CompanyPage /> },
+  { path: "/platforms", component: <PlatformsPage /> },
+  { path: "/platforms/:id", component: <PlatformPage /> },
   { path: "/*", component: <PageNotFound /> },
 ];
 
@@ -34,4 +40,6 @@ export const superuserRoutes: Route[] = [
   { path: "/backups", component: <BackupsPage /> },
   { path: "/companies/create", component: <CreateCompanyPage /> },
   { path: "/companies/:id/edit", component: <EditCompanyPage /> },
+  { path: "/platforms/create", component: <CreatePlatformPage /> },
+  { path: "/platforms/:id/edit", component: <EditPlatformPage /> },
 ];

@@ -9,3 +9,7 @@ export { CompaniesPage } from "./CompaniesPage";
 export { EditCompanyPage } from "./EditCompanyPage";
 export { CreateCompanyPage } from "./CreateCompanyPage";
 export { CompanyPage } from "./CompanyPage";
+export { PlatformsPage } from "./PlatformsPage";
+export { CreatePlatformPage } from "./CreatePlatformPage";
+export { PlatformPage } from "./PlatformPage";
+export { EditPlatformPage } from "./EditPlatformPage";

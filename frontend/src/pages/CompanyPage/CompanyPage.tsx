@@ -57,6 +57,10 @@ export const CompanyPage: React.FC = () => {
               <td>Created by:</td>
               <td>{company && company.created_by_user ? company.created_by_user.username : "-"}</td>
             </tr>
+            <tr>
+              <td>Amount of games:</td>
+              <td>{company?.games?.length}</td>
+            </tr>
           </tbody>
         </table>
         <Divider orientation="right">

@@ -1,0 +1,1 @@
+export { EditPlatformPage } from "./EditPlatformPage";

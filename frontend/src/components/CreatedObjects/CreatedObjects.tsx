@@ -3,6 +3,7 @@ import styles from "./CreatedObjects.module.css";
 import { Sale } from "../../client";
 import { Collapse, Divider } from "antd";
 import { BlockElement } from "../BlockElement";
+import { useAppSelector } from "../../store";
 
 type Field =
   | "created_companies"
@@ -34,6 +35,8 @@ const blocks: Block[] = [
 ];
 
 export const CreatedObjects: React.FC = () => {
+  const me = useAppSelector((s) => s.auth.me);
+
   return (
     <div className={styles.container}>
       <h2>Created objects</h2>
@@ -43,10 +46,10 @@ export const CreatedObjects: React.FC = () => {
           return (
             <Collapse.Panel
               key={block.title}
-              header={block.title
+              header={`${block.title
                 .split("_")
                 .map((s) => s.toUpperCase())
-                .join(" ")}
+                .join(" ")} (${me && me[block.title]?.length})`}
             >
               <BlockElement block={block} />
             </Collapse.Panel>
