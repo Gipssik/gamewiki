@@ -1,0 +1,1 @@
+export { EditGenrePage } from "./EditGenrePage";

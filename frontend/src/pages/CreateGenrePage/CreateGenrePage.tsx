@@ -1,28 +1,28 @@
 import { Button, Form, Input, Modal, notification } from "antd";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { PlatformCreate, PlatformsService } from "../../client";
+import { GenreCreate, GenresService } from "../../client";
 import { Title } from "../../components";
 import { getPrettifiedErrorString } from "../../utils";
-import styles from "./CreatePlatformPage.module.css";
+import styles from "./CreateGenrePage.module.css";
 
 type CreateFields = {
   title: string;
 };
 
-export const CreatePlatformPage: React.FC = () => {
+export const CreateGenrePage: React.FC = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const processCreate = (values: CreateFields) => {
-    const toCreate: PlatformCreate = {
+    const toCreate: GenreCreate = {
       title: values.title,
     };
 
-    PlatformsService.create(toCreate)
-      .then((platform) => {
-        notification.success({ message: `Platform ${platform.title} was created successfully` });
-        navigate("/platforms");
+    GenresService.create(toCreate)
+      .then((genre) => {
+        notification.success({ message: `Genre ${genre.title} was created successfully` });
+        navigate("/genres");
       })
       .catch((error) => {
         Modal.error({
@@ -35,7 +35,7 @@ export const CreatePlatformPage: React.FC = () => {
 
   return (
     <>
-      <Title>Create platform</Title>
+      <Title>Create genre</Title>
       <div className={styles.container}>
         <Form
           form={form}

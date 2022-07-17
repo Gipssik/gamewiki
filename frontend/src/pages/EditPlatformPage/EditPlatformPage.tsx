@@ -36,7 +36,7 @@ export const EditPlatformPage: React.FC = () => {
 
   return (
     <>
-      <Title>Edit company {platformToEdit?.title}</Title>
+      <Title>Edit platform {platformToEdit?.title}</Title>
       {platformToEdit ? <PlatformEditForm platform={platformToEdit} /> : null}
     </>
   );

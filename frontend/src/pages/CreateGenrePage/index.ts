@@ -1,0 +1,1 @@
+export { CreateGenrePage } from "./CreateGenrePage";

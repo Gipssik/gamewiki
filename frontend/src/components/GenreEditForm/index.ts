@@ -1,0 +1,1 @@
+export { GenreEditForm } from "./GenreEditForm";

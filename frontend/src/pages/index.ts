@@ -13,3 +13,7 @@ export { PlatformsPage } from "./PlatformsPage";
 export { CreatePlatformPage } from "./CreatePlatformPage";
 export { PlatformPage } from "./PlatformPage";
 export { EditPlatformPage } from "./EditPlatformPage";
+export { GenresPage } from "./GenresPage";
+export { CreateGenrePage } from "./CreateGenrePage";
+export { EditGenrePage } from "./EditGenrePage";
+export { GenrePage } from "./GenrePage";
