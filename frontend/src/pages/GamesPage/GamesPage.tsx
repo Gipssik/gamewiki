@@ -8,7 +8,7 @@ import { Game, GamesService } from "../../client";
 import { GamesColumns } from "../../columns";
 import { Container, Panel, Title } from "../../components";
 import { gamesActions, useAppDispatch, useAppSelector } from "../../store";
-import { fetchLimit, getSign, getSkip } from "../../utils";
+import { fetchLimit, getSign, getSkip, getSorts } from "../../utils";
 import styles from "../../columns/columns.module.css";
 
 let columns = [...GamesColumns];
@@ -59,12 +59,7 @@ export const GamesPage: React.FC = () => {
     sorter: SorterResult<Game> | SorterResult<Game>[]
   ) => {
     let skip = getSkip(newPagination);
-    let sorts: string | undefined;
-    if (sorter && sorter instanceof Array) {
-      sorts = sorter.map((sort) => getSign(sort.order || null) + sort.field).join(",");
-    } else if (sorter && sorter instanceof Object && sorter.column !== undefined) {
-      sorts = getSign(sorter.order || null) + sorter.field;
-    }
+    let sorts = getSorts<Game>(sorter);
 
     setSortParameters(sorts);
 
@@ -127,8 +122,7 @@ export const GamesPage: React.FC = () => {
   }, [me]);
 
   useEffect(() => {
-    if (!games) fetchGames(0, fetchLimit);
-    else setIsGamesLoading(false);
+    fetchGames(0, fetchLimit);
   }, []);
 
   return (

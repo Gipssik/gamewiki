@@ -13,3 +13,4 @@ export { GenreEditForm } from "./GenreEditForm";
 export { AjaxSelect } from "./AjaxSelect";
 export { DebounceSelect } from "./DebounceSelect";
 export { GameEditForm } from "./GameEditForm";
+export { SaleEditForm } from "./SaleEditForm";

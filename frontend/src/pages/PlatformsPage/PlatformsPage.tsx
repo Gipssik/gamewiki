@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Platform, PlatformsService } from "../../client";
 import { PlatformsColumns } from "../../columns";
 import { platformsActions, useAppDispatch, useAppSelector } from "../../store";
-import { fetchLimit, getSign, getSkip } from "../../utils";
+import { fetchLimit, getSkip, getSorts } from "../../utils";
 import styles from "../../columns/columns.module.css";
 import { Container, Panel, Title } from "../../components";
 import modal from "antd/lib/modal";
@@ -57,12 +57,7 @@ export const PlatformsPage: React.FC = () => {
     sorter: SorterResult<Platform> | SorterResult<Platform>[]
   ) => {
     let skip = getSkip(newPagination);
-    let sorts: string | undefined;
-    if (sorter && sorter instanceof Array) {
-      sorts = sorter.map((sort) => getSign(sort.order || null) + sort.field).join(",");
-    } else if (sorter && sorter instanceof Object && sorter.column !== undefined) {
-      sorts = getSign(sorter.order || null) + sorter.field;
-    }
+    let sorts = getSorts<Platform>(sorter);
 
     setSortParameters(sorts);
 
@@ -117,8 +112,7 @@ export const PlatformsPage: React.FC = () => {
   }, [me]);
 
   useEffect(() => {
-    if (!platforms) fetchPlatforms(0, fetchLimit);
-    else setIsPlatformsLoading(false);
+    fetchPlatforms(0, fetchLimit);
   }, []);
 
   return (

@@ -21,3 +21,6 @@ export { GamesPage } from "./GamesPage";
 export { CreateGamePage } from "./CreateGamePage";
 export { EditGamePage } from "./EditGamePage";
 export { GamePage } from "./GamePage";
+export { SalesPage } from "./SalesPage";
+export { CreateSalePage } from "./CreateSalePage";
+export { EditSalePage } from "./EditSalePage";

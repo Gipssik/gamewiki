@@ -6,6 +6,7 @@ import { companiesReducer } from "./companies.slice";
 import { gamesReducer } from "./games.slice";
 import { genresReducer } from "./genres.slice";
 import { platformsReducer } from "./platforms.slice";
+import { salesReducer } from "./sales.slice";
 import { usersReducer } from "./users.slice";
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
     platforms: platformsReducer,
     genres: genresReducer,
     games: gamesReducer,
+    sales: salesReducer,
   },
 });
 

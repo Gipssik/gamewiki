@@ -69,6 +69,10 @@ export const GamePage: React.FC = () => {
               <td>Amount of platforms:</td>
               <td>{game?.platforms?.length}</td>
             </tr>
+            <tr>
+              <td>Amount of sales:</td>
+              <td>{game?.sales?.length}</td>
+            </tr>
           </tbody>
         </table>
         <div className={styles.objects}>

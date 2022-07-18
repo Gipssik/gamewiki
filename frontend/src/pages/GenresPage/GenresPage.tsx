@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Genre, GenresService } from "../../client";
 import { GenresColumns } from "../../columns";
 import { genresActions, useAppDispatch, useAppSelector } from "../../store";
-import { fetchLimit, getSign, getSkip } from "../../utils";
+import { fetchLimit, getSign, getSkip, getSorts } from "../../utils";
 import styles from "../../columns/columns.module.css";
 import { Container, Panel, Title } from "../../components";
 import modal from "antd/lib/modal";
@@ -57,12 +57,8 @@ export const GenresPage: React.FC = () => {
     sorter: SorterResult<Genre> | SorterResult<Genre>[]
   ) => {
     let skip = getSkip(newPagination);
-    let sorts: string | undefined;
-    if (sorter && sorter instanceof Array) {
-      sorts = sorter.map((sort) => getSign(sort.order || null) + sort.field).join(",");
-    } else if (sorter && sorter instanceof Object && sorter.column !== undefined) {
-      sorts = getSign(sorter.order || null) + sorter.field;
-    }
+
+    let sorts = getSorts<Genre>(sorter);
 
     setSortParameters(sorts);
 
@@ -117,8 +113,7 @@ export const GenresPage: React.FC = () => {
   }, [me]);
 
   useEffect(() => {
-    if (!genres) fetchGenres(0, fetchLimit);
-    else setIsGenresLoading(false);
+    fetchGenres(0, fetchLimit);
   }, []);
 
   return (

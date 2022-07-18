@@ -8,7 +8,7 @@ import { User, UsersService } from "../../client";
 import { UsersColumns } from "../../columns";
 import { Container, Panel, Title } from "../../components";
 import { useAppDispatch, useAppSelector, usersActions } from "../../store";
-import { fetchLimit, getSign, getSkip } from "../../utils";
+import { fetchLimit, getSign, getSkip, getSorts } from "../../utils";
 
 const UsersPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -58,12 +58,7 @@ const UsersPage: React.FC = () => {
     sorter: SorterResult<User> | SorterResult<User>[]
   ) => {
     let skip = getSkip(newPagination);
-    let sorts: string | undefined;
-    if (sorter && sorter instanceof Array) {
-      sorts = sorter.map((sort) => getSign(sort.order || null) + sort.field).join(",");
-    } else if (sorter && sorter instanceof Object && sorter.column !== undefined) {
-      sorts = getSign(sorter.order || null) + sorter.field;
-    }
+    let sorts = getSorts<User>(sorter);
 
     setSortParameters(sorts);
 
@@ -113,9 +108,8 @@ const UsersPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!users) fetchUsers(0, fetchLimit);
-    else setIsUsersLoading(false);
-  }, [users]);
+    fetchUsers(0, fetchLimit);
+  }, []);
 
   return (
     <Container>

@@ -1,73 +1,75 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
 import { Button, Input, message, Space, Table, TablePaginationConfig } from "antd";
+import { FilterValue, SorterResult } from "antd/lib/table/interface";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CompaniesService, Company } from "../../client";
-import { CompaniesColumns } from "../../columns";
-import { Container, Panel, Title } from "../../components";
-import { companiesActions, useAppDispatch, useAppSelector } from "../../store";
-import styles from "../../columns/columns.module.css";
+import { Sale, SalesService } from "../../client";
+import { SalesColumns } from "../../columns";
+import { salesActions, useAppDispatch, useAppSelector } from "../../store";
 import { fetchLimit, getSign, getSkip, getSorts } from "../../utils";
-import { FilterValue, SorterResult } from "antd/lib/table/interface";
+import styles from "../../columns/columns.module.css";
+import { Container, Panel, Title } from "../../components";
 import modal from "antd/lib/modal";
 
-let columns = [...CompaniesColumns];
+let columns = [...SalesColumns];
 
-export const CompaniesPage: React.FC = () => {
+export const SalesPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { companies, pagination } = useAppSelector((s) => s.companies);
+  const { sales, pagination } = useAppSelector((s) => s.sales);
   const me = useAppSelector((s) => s.auth.me);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const hasSelected = selectedRowKeys.length > 0;
-  const [isCompaniesLoading, setIsCompaniesLoading] = useState<boolean>(true);
+  const [isSalesLoading, setIsSalesLoading] = useState<boolean>(true);
   const [sortParameters, setSortParameters] = useState<string | undefined>(undefined);
-  const [searchTitle, setSearchTitle] = useState<string | undefined>(undefined);
+  const [searchGame, setSearchGame] = useState<string | undefined>(undefined);
+  const [searchPlatform, setSearchPlatform] = useState<string | undefined>(undefined);
   const [searchCreatedBy, setSearchCreatedBy] = useState<string | undefined>(undefined);
 
   const setPagination = (newPagination: TablePaginationConfig) => {
-    dispatch(companiesActions.setPagination({ pagination: newPagination }));
+    dispatch(salesActions.setPagination({ pagination: newPagination }));
   };
 
-  const fetchCompanies = (
+  const fetchSales = (
     skip?: number,
     limit?: number,
-    title?: string,
+    game?: string,
+    platform?: string,
     createdByUser?: string,
     sort?: string,
     newPagination?: TablePaginationConfig
   ) => {
-    setIsCompaniesLoading(true);
-    CompaniesService.getMultiWithHeaders(skip, limit, title, createdByUser, sort)
+    setIsSalesLoading(true);
+    SalesService.getMultiWithHeaders(skip, limit, game, platform, createdByUser, sort)
       .then((data) => {
-        dispatch(companiesActions.setAll({ companies: data.body || [] }));
+        dispatch(salesActions.setAll({ sales: data.body || [] }));
 
         if (newPagination) setPagination({ ...newPagination, total: Number(data.count) });
         else setPagination({ ...pagination, total: Number(data.count) });
 
-        setIsCompaniesLoading(false);
+        setIsSalesLoading(false);
       })
       .catch((error) => {
-        setIsCompaniesLoading(false);
+        setIsSalesLoading(false);
       });
   };
 
   const handleTableChange = (
     newPagination: TablePaginationConfig,
     filters: Record<string, FilterValue | null>,
-    sorter: SorterResult<Company> | SorterResult<Company>[]
+    sorter: SorterResult<Sale> | SorterResult<Sale>[]
   ) => {
     let skip = getSkip(newPagination);
-    let sorts = getSorts<Company>(sorter);
+    let sorts = getSorts<Sale>(sorter);
 
     setSortParameters(sorts);
 
-    fetchCompanies(skip, fetchLimit, searchTitle, searchCreatedBy, sorts, newPagination);
+    fetchSales(skip, fetchLimit, searchGame, searchPlatform, searchCreatedBy, sorts, newPagination);
   };
 
   const refresh = () => {
     let skip = getSkip(pagination);
     setSelectedRowKeys([]);
-    fetchCompanies(skip, fetchLimit, searchTitle, searchCreatedBy, sortParameters);
+    fetchSales(skip, fetchLimit, searchGame, searchPlatform, searchCreatedBy, sortParameters);
   };
 
   const search = () => {
@@ -77,16 +79,16 @@ export const CompaniesPage: React.FC = () => {
       pageSize: fetchLimit,
       position: ["bottomCenter"],
     } as TablePaginationConfig;
-    fetchCompanies(skip, fetchLimit, searchTitle, searchCreatedBy, sortParameters, newPagination);
+    fetchSales(skip, fetchLimit, searchGame, searchPlatform, searchCreatedBy, sortParameters, newPagination);
   };
 
   const deleteOnButtonClick = () => {
     let skip = getSkip(pagination);
-    CompaniesService.deleteMulti(selectedRowKeys as string[])
+    SalesService.deleteMulti(selectedRowKeys as string[])
       .then((data) => {
-        message.success("Companies were successfully deleted!", 5);
+        message.success("Sales were successfully deleted!", 5);
         setSelectedRowKeys([]);
-        fetchCompanies(skip, fetchLimit, searchTitle, searchCreatedBy, sortParameters);
+        fetchSales(skip, fetchLimit, searchGame, searchPlatform, searchCreatedBy, sortParameters);
       })
       .catch((error) => {
         message.error(error, 5);
@@ -100,40 +102,45 @@ export const CompaniesPage: React.FC = () => {
         {
           title: "Edit",
           align: "center",
-          render: (value: any, record: Company) => (
-            <Link className={styles.icon} to={`/companies/${record.id}/edit`}>
+          render: (value: any, record: Sale) => (
+            <Link className={styles.icon} to={`/sales/${record.id}/edit`}>
               <EditOutlined />
             </Link>
           ),
         },
         ...columns,
       ];
-    } else columns = [...CompaniesColumns];
+    } else columns = [...SalesColumns];
   }, [me]);
 
   useEffect(() => {
-    fetchCompanies(0, fetchLimit);
+    fetchSales(0, fetchLimit);
   }, []);
 
   return (
     <Container>
-      <Title>Companies</Title>
+      <Title>Sales</Title>
       <Panel>
         <Space>
-          <Button icon={<SyncOutlined />} loading={isCompaniesLoading} onClick={refresh}>
+          <Button icon={<SyncOutlined />} loading={isSalesLoading} onClick={refresh}>
             Refresh
           </Button>
           <Input
-            placeholder="Title"
-            value={searchTitle}
-            onChange={(e) => setSearchTitle(e.target.value === "" ? undefined : e.target.value)}
+            placeholder="Game"
+            value={searchGame}
+            onChange={(e) => setSearchGame(e.target.value === "" ? undefined : e.target.value)}
+          />
+          <Input
+            placeholder="Platform"
+            value={searchPlatform}
+            onChange={(e) => setSearchPlatform(e.target.value === "" ? undefined : e.target.value)}
           />
           <Input
             placeholder="Created By"
             value={searchCreatedBy}
             onChange={(e) => setSearchCreatedBy(e.target.value === "" ? undefined : e.target.value)}
           />
-          <Button icon={<SearchOutlined />} type="primary" loading={isCompaniesLoading} onClick={search}>
+          <Button icon={<SearchOutlined />} type="primary" loading={isSalesLoading} onClick={search}>
             Search
           </Button>
         </Space>
@@ -145,16 +152,16 @@ export const CompaniesPage: React.FC = () => {
               danger
               onClick={() => {
                 modal.confirm({
-                  title: "Are you sure you want to delete these companies?",
+                  title: "Are you sure you want to delete these sales?",
                   onOk: deleteOnButtonClick,
                 });
               }}
               disabled={!hasSelected}
-              loading={isCompaniesLoading}
+              loading={isSalesLoading}
             >
               Delete
             </Button>
-            <Link to={"/companies/create"}>
+            <Link to={"/sales/create"}>
               <Button icon={<PlusOutlined />} type="primary">
                 Create
               </Button>
@@ -163,12 +170,12 @@ export const CompaniesPage: React.FC = () => {
         ) : null}
       </Panel>
       <Table
-        dataSource={companies || undefined}
+        dataSource={sales || undefined}
         rowKey={(record) => record.id}
         columns={columns}
         bordered
         size="small"
-        loading={isCompaniesLoading}
+        loading={isSalesLoading}
         pagination={pagination}
         rowSelection={
           me && me.is_superuser ? { type: "checkbox", onChange: setSelectedRowKeys, selectedRowKeys } : undefined

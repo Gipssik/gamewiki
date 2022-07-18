@@ -8,10 +8,12 @@ import {
   CreateGamePage,
   CreateGenrePage,
   CreatePlatformPage,
+  CreateSalePage,
   EditCompanyPage,
   EditGamePage,
   EditGenrePage,
   EditPlatformPage,
+  EditSalePage,
   EditUserPage,
   GamePage,
   GamesPage,
@@ -20,6 +22,7 @@ import {
   PageNotFound,
   PlatformPage,
   PlatformsPage,
+  SalesPage,
   SignInPage,
   SignUpPage,
   UsersPage,
@@ -41,6 +44,7 @@ export const publicRoutes: Route[] = [
   { path: "/genres/:id", component: <GenrePage /> },
   { path: "/games", component: <GamesPage /> },
   { path: "/games/:id", component: <GamePage /> },
+  { path: "/sales", component: <SalesPage /> },
   { path: "/*", component: <PageNotFound /> },
 ];
 
@@ -58,4 +62,6 @@ export const superuserRoutes: Route[] = [
   { path: "/genres/:id/edit", component: <EditGenrePage /> },
   { path: "/games/create", component: <CreateGamePage /> },
   { path: "/games/:id/edit", component: <EditGamePage /> },
+  { path: "/sales/create", component: <CreateSalePage /> },
+  { path: "/sales/:id/edit", component: <EditSalePage /> },
 ];

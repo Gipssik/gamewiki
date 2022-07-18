@@ -121,86 +121,83 @@ export const GameEditForm: React.FC<Props> = ({ game }) => {
   };
 
   return (
-    <>
-      <Title>Create game</Title>
-      <div className={styles.container}>
-        <Form
-          form={form}
-          name="basic"
-          labelCol={{
-            span: 10,
-          }}
-          wrapperCol={{
-            span: 16,
-          }}
-          onFinish={processUpdate}
-          autoComplete="off"
+    <div className={styles.container}>
+      <Form
+        form={form}
+        name="basic"
+        labelCol={{
+          span: 10,
+        }}
+        wrapperCol={{
+          span: 16,
+        }}
+        onFinish={processUpdate}
+        autoComplete="off"
+      >
+        <Form.Item
+          colon={false}
+          label="Title"
+          name="title"
+          initialValue={game.title}
+          rules={[{ required: true, message: "Game title is required" }]}
         >
-          <Form.Item
-            colon={false}
-            label="Title"
-            name="title"
-            initialValue={game.title}
-            rules={[{ required: true, message: "Game title is required" }]}
-          >
-            <Input />
-          </Form.Item>
+          <Input />
+        </Form.Item>
 
-          <Form.Item
-            colon={false}
-            label="Released at"
-            name="released_at"
-            initialValue={moment(game.released_at)}
-            rules={[{ required: true, message: "Date of game's release is required" }]}
-          >
-            <DatePicker />
-          </Form.Item>
+        <Form.Item
+          colon={false}
+          label="Released at"
+          name="released_at"
+          initialValue={moment(game.released_at)}
+          rules={[{ required: true, message: "Date of game's release is required" }]}
+        >
+          <DatePicker />
+        </Form.Item>
 
-          <Form.Item
-            colon={false}
-            label="Created by company"
-            name="created_by_company"
-            initialValue={game.created_by_company.title}
-            rules={[{ required: true, message: "Game's creator is required" }]}
-          >
-            <AjaxSelect fetchData={fetchCompanies} placeholder="Company" />
-          </Form.Item>
+        <Form.Item
+          colon={false}
+          label="Created by company"
+          name="created_by_company"
+          initialValue={game.created_by_company.title}
+          rules={[{ required: true, message: "Game's creator is required" }]}
+        >
+          <AjaxSelect fetchData={fetchCompanies} placeholder="Company" />
+        </Form.Item>
 
-          <Form.Item
-            colon={false}
-            label="Genres"
-            name="genres"
-            initialValue={game.genres?.map((g) => ({ label: g.title, value: g.id }))}
-          >
-            <DebounceSelect mode="multiple" placeholder="Genres" fetchOptions={fetchGenres} style={{ width: "100%" }} />
-          </Form.Item>
+        <Form.Item
+          colon={false}
+          label="Genres"
+          name="genres"
+          initialValue={game.genres?.map((g) => ({ label: g.title, value: g.id }))}
+        >
+          <DebounceSelect mode="multiple" placeholder="Genres" fetchOptions={fetchGenres} style={{ width: "100%" }} />
+        </Form.Item>
 
-          <Form.Item
-            colon={false}
-            label="Platforms"
-            name="platforms"
-            initialValue={game.platforms?.map((p) => ({ label: p.title, value: p.id }))}
-          >
-            <DebounceSelect
-              mode="multiple"
-              placeholder="Platforms"
-              fetchOptions={fetchPlatforms}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
+        <Form.Item
+          colon={false}
+          label="Platforms"
+          name="platforms"
+          initialValue={game.platforms?.map((p) => ({ label: p.title, value: p.id }))}
+        >
+          <DebounceSelect
+            mode="multiple"
+            placeholder="Platforms"
+            fetchOptions={fetchPlatforms}
+            style={{ width: "100%" }}
+          />
+        </Form.Item>
 
-          <Form.Item wrapperCol={{}}>
-            <div className={styles.buttons}>
-              <Button type="primary" htmlType="submit">
-                Edit
-              </Button>
-              <Button type="ghost" onClick={reset}>
-                Reset
-              </Button>
-            </div>
-          </Form.Item>
-        </Form>
-      </div>
-    </>
+        <Form.Item wrapperCol={{}}>
+          <div className={styles.buttons}>
+            <Button type="primary" htmlType="submit">
+              Edit
+            </Button>
+            <Button type="ghost" onClick={reset}>
+              Reset
+            </Button>
+          </div>
+        </Form.Item>
+      </Form>
+    </div>
   );
 };

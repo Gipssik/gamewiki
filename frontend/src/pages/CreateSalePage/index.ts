@@ -1,0 +1,1 @@
+export { CreateSalePage } from "./CreateSalePage";
