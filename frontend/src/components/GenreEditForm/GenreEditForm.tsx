@@ -42,7 +42,7 @@ export const GenreEditForm: React.FC<Props> = ({ genre }) => {
             content: getPrettifiedErrorString(error.body.detail),
           });
         });
-    }
+    } else navigate("/genres");
   };
 
   const reset = () => {

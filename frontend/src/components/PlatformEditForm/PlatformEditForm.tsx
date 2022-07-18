@@ -42,7 +42,7 @@ export const PlatformEditForm: React.FC<Props> = ({ platform }) => {
             content: getPrettifiedErrorString(error.body.detail),
           });
         });
-    }
+    } else navigate("/platforms");
   };
 
   const reset = () => {

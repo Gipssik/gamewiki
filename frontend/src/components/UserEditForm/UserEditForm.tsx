@@ -1,4 +1,4 @@
-import { Button, Form, Input, message, Modal, notification, Switch } from "antd";
+import { Button, Form, Input, Modal, notification, Switch } from "antd";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { User, UsersService, UserUpdate } from "../../client";
@@ -49,7 +49,7 @@ export const UserEditForm: React.FC<Props> = ({ user }) => {
             content: getPrettifiedErrorString(error.body.detail),
           });
         });
-    }
+    } else navigate("/users");
   };
 
   const reset = () => {

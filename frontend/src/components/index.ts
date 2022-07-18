@@ -10,3 +10,6 @@ export { UserEditForm } from "./UserEditForm";
 export { CompanyEditForm } from "./CompanyEditForm";
 export { PlatformEditForm } from "./PlatformEditForm";
 export { GenreEditForm } from "./GenreEditForm";
+export { AjaxSelect } from "./AjaxSelect";
+export { DebounceSelect } from "./DebounceSelect";
+export { GameEditForm } from "./GameEditForm";

@@ -44,7 +44,7 @@ async def get_multi(
         ),
         "created_by_company": (
             "created_by_company__title__icontains",
-            queries.created_by_user,
+            queries.created_by_company,
         ),
     }
     filters = queries.dict(exclude_none=True, include={*filters_dict.keys()})

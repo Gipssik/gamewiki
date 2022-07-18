@@ -17,3 +17,7 @@ export { GenresPage } from "./GenresPage";
 export { CreateGenrePage } from "./CreateGenrePage";
 export { EditGenrePage } from "./EditGenrePage";
 export { GenrePage } from "./GenrePage";
+export { GamesPage } from "./GamesPage";
+export { CreateGamePage } from "./CreateGamePage";
+export { EditGamePage } from "./EditGamePage";
+export { GamePage } from "./GamePage";

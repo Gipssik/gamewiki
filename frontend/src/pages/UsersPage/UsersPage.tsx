@@ -29,7 +29,7 @@ const UsersPage: React.FC = () => {
 
   const fetchUsers = (
     skip?: number,
-    limit: number = 100,
+    limit?: number,
     username?: string,
     email?: string,
     isSuperuser?: boolean,
@@ -136,25 +136,23 @@ const UsersPage: React.FC = () => {
             onChange={(e) => setSearchEmail(e.target.value === "" ? undefined : e.target.value)}
           />
           <Select
-            defaultValue="undefined"
+            defaultValue={undefined}
             loading={isUsersLoading}
             style={{ width: 120 }}
-            onChange={(value) =>
-              typeof value === "string" ? setSearchIsSuperuser(undefined) : setSearchIsSuperuser(value)
-            }
+            onChange={setSearchIsSuperuser}
+            placeholder="Is Superuser"
+            allowClear
           >
-            <Select.Option value="undefined">-</Select.Option>
             <Select.Option value={true}>Superuser</Select.Option>
             <Select.Option value={false}>Not Superuser</Select.Option>
           </Select>
           <Select
-            defaultValue="undefined"
+            defaultValue={undefined}
             style={{ width: 120 }}
-            onChange={(value) =>
-              typeof value === "string" ? setSearchIsPrimary(undefined) : setSearchIsPrimary(value)
-            }
+            onChange={setSearchIsPrimary}
+            placeholder="Is Primary"
+            allowClear
           >
-            <Select.Option value="undefined">-</Select.Option>
             <Select.Option value={true}>Primary</Select.Option>
             <Select.Option value={false}>Not Primary</Select.Option>
           </Select>

@@ -47,7 +47,7 @@ export const CompanyEditForm: React.FC<Props> = ({ company }) => {
             content: getPrettifiedErrorString(error.body.detail),
           });
         });
-    }
+    } else navigate("/companies");
   };
 
   const reset = () => {

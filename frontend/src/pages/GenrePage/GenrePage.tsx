@@ -1,6 +1,6 @@
 import { Divider, Empty, List } from "antd";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Genre, GenresService } from "../../client";
 import { Loader, Title } from "../../components";
 import { useAppSelector } from "../../store";
@@ -62,7 +62,11 @@ export const GenrePage: React.FC = () => {
           <List
             bordered
             dataSource={genre?.games}
-            renderItem={(item) => <List.Item>{item.title}</List.Item>}
+            renderItem={(item) => (
+              <List.Item>
+                <Link to={`/games/${item.id}`}>{item.title}</Link>
+              </List.Item>
+            )}
             locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No Games" /> }}
           />
         </div>

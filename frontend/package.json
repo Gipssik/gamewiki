@@ -19,6 +19,7 @@
     "antd": "^4.21.4",
     "axios": "^0.27.2",
     "dotenv": "^16.0.1",
+    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.2",
@@ -54,6 +55,7 @@
     ]
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.182",
     "css-loader": "^6.7.1",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.5.0",
