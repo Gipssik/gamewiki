@@ -1,7 +1,9 @@
 import logging
 from typing import Any
 
+from pypika import CustomFunction, Interval, Parameter
 from tortoise.expressions import Q
+from tortoise.functions import Count, Function
 
 from backend.db import models
 from backend.db.dao.base import BaseDAO
@@ -9,6 +11,10 @@ from backend.exceptions import InvalidPasswordException, ObjectNotFoundException
 from backend.security import hash_password, verify_password
 
 logger = logging.getLogger(__name__)
+
+
+class TruncDate(Function):
+    database_func = CustomFunction("DATE", ["name"])
 
 
 class UserDAO(BaseDAO[models.User]):
@@ -152,3 +158,23 @@ class UserDAO(BaseDAO[models.User]):
 
         logger.debug(f"Got primary user {user.username}")
         return user
+
+    async def get_user_creation_statistics(self, days: int) -> list[dict]:
+        data = (
+            await self.model.filter(
+                created_at__gte=Parameter("CURRENT_DATE") - Interval(days=days),
+            )
+            .annotate(date=TruncDate("created_at"), users=Count("id"))
+            .group_by("date")
+            .values("date", "users")
+        )
+        return data
+
+    async def get_users_role_statistics(self) -> list[dict]:
+        data = (
+            await self.model.all()
+            .annotate(users=Count("id"))
+            .group_by("is_superuser")
+            .values("is_superuser", "users")
+        )
+        return data

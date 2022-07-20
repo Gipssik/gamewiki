@@ -14,3 +14,11 @@ class SaleDAO(BaseDAO[models.Sale]):
             "platform",
             "created_by_user",
         ]
+
+    async def get_popularity_statistics(self) -> list[dict]:
+        data = (
+            await self.model.all()
+            .order_by("amount")
+            .values("game__title", "platform__title", "amount")
+        )
+        return data

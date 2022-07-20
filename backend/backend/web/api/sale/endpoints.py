@@ -60,6 +60,23 @@ async def get_multi(
     return sales
 
 
+@router.get(
+    "/popularity-statistics",
+    response_model=list[schema.SalePopularityStatistics],
+)
+async def get_popularity_statistics(sale_dao: SaleDAO = Depends()) -> list[dict]:
+    """Statistics for game-platform sale popularity.
+
+    Args:
+        sale_dao (SaleDAO): SaleDAO
+
+    Returns:
+        Sale: Statistics for game-platform sale popularity.
+    """
+
+    return await sale_dao.get_popularity_statistics()
+
+
 @router.get("/{sale_id}", response_model=SaleSchema)
 async def get(sale_id: UUID, sale_dao: SaleDAO = Depends()) -> Sale:
     """Get sale by id.

@@ -59,6 +59,37 @@ async def get_multi(
     return companies
 
 
+@router.get(
+    "/foundation-statistics",
+    response_model=list[schema.CompanyFoundationStatistics],
+)
+async def get_foundation_statistics(company_dao: CompanyDAO = Depends()) -> list[dict]:
+    """Statistics for companies foundation.
+
+    Args:
+        company_dao (CompanyDAO, optional): Company DAO.
+
+    Returns:
+        dict: Statistics for companies foundation.
+    """
+
+    return await company_dao.get_foundation_statistics()
+
+
+@router.get("/games-statistics", response_model=list[schema.CompanyGamesStatistics])
+async def get_games_statistics(company_dao: CompanyDAO = Depends()) -> list[dict]:
+    """Statistics for companies' games.
+
+    Args:
+        company_dao (CompanyDAO, optional): Company DAO.
+
+    Returns:
+        dict: Statistics for companies' games.
+    """
+
+    return await company_dao.get_games_statistics()
+
+
 @router.get("/{company_id}", response_model=CompanySchema)
 async def get(company_id: UUID, company_dao: CompanyDAO = Depends()) -> Company:
     """Get company by id.

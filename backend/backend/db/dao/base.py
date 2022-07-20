@@ -92,16 +92,6 @@ class BaseDAO(Generic[ModelType]):
             sort[i] += "_count"
             count_sorts[sort[i].lstrip("-")] = Count(field)
 
-        # group_by_sorts: list[str] = []
-        # disjoined_sort = [x.lstrip("-").split("__")[0] for x in sort]
-        # for field in self.__model._meta.fk_fields:
-        #     try:
-        #         i = disjoined_sort.index(field)
-        #     except ValueError:
-        #         continue
-        #     group_by_sorts.append(sort[i])
-
-        # TODO: fix
         stmt = (
             self.__model.filter(**expr)
             .offset(offset)
@@ -110,9 +100,6 @@ class BaseDAO(Generic[ModelType]):
             .order_by(*sort)
             .prefetch_related(*self.related)
         )
-
-        # if group_by_sorts:
-        #     stmt = stmt.group_by("id", *group_by_sorts).values()
 
         objects = await stmt
 

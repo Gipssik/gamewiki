@@ -1,5 +1,5 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
-import { Button, Input, message, Space, Table, TablePaginationConfig } from "antd";
+import { Button, DatePicker, Input, message, Space, Table, TablePaginationConfig } from "antd";
 import modal from "antd/lib/modal";
 import { FilterValue, SorterResult } from "antd/lib/table/interface";
 import React, { useEffect, useState } from "react";
@@ -8,10 +8,15 @@ import { Game, GamesService } from "../../client";
 import { GamesColumns } from "../../columns";
 import { Container, Panel, Title } from "../../components";
 import { gamesActions, useAppDispatch, useAppSelector } from "../../store";
-import { fetchLimit, getSign, getSkip, getSorts } from "../../utils";
+import { fetchLimit, getSkip, getSorts } from "../../utils";
 import styles from "../../columns/columns.module.css";
 
 let columns = [...GamesColumns];
+
+type DateRange = {
+  start: string;
+  end: string;
+};
 
 export const GamesPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,23 +28,46 @@ export const GamesPage: React.FC = () => {
   const [searchTitle, setSearchTitle] = useState<string>();
   const [searchCreatedByUser, setSearchCreatedByUser] = useState<string>();
   const [searchCreatedByCompany, setSearchCreatedByCompany] = useState<string>();
+  const [searchDateRange, setSearchDateRange] = useState<DateRange>();
   const [sortParameters, setSortParameters] = useState<string | undefined>(undefined);
 
   const setPagination = (newPagination: TablePaginationConfig) => {
     dispatch(gamesActions.setPagination({ pagination: newPagination }));
   };
 
+  const setDateRange = (range: moment.Moment[]) => {
+    if (!range) {
+      setSearchDateRange(undefined);
+      return;
+    }
+    const dateRange: DateRange = {
+      start: range[0].format("YYYY-MM-DD"),
+      end: range[1].format("YYYY-MM-DD"),
+    };
+    setSearchDateRange(dateRange);
+  };
+
   const fetchGames = (
     skip?: number,
     limit?: number,
     title?: string,
+    dateRange?: DateRange,
     createdByUser?: string,
     createdByCompany?: string,
     sort?: string,
     newPagination?: TablePaginationConfig
   ) => {
     setIsGamesLoading(true);
-    GamesService.getMultiWithHeaders(skip, limit, title, createdByUser, createdByCompany, sort)
+    GamesService.getMultiWithHeaders(
+      skip,
+      limit,
+      title,
+      dateRange?.start,
+      dateRange?.end,
+      createdByUser,
+      createdByCompany,
+      sort
+    )
       .then((data) => {
         dispatch(gamesActions.setAll({ games: data.body || [] }));
 
@@ -63,7 +91,16 @@ export const GamesPage: React.FC = () => {
 
     setSortParameters(sorts);
 
-    fetchGames(skip, fetchLimit, searchTitle, searchCreatedByUser, searchCreatedByCompany, sorts, newPagination);
+    fetchGames(
+      skip,
+      fetchLimit,
+      searchTitle,
+      searchDateRange,
+      searchCreatedByUser,
+      searchCreatedByCompany,
+      sorts,
+      newPagination
+    );
   };
 
   const deleteOnButtonClick = () => {
@@ -72,7 +109,15 @@ export const GamesPage: React.FC = () => {
       .then((data) => {
         message.success("Games were successfully deleted!", 5);
         setSelectedRowKeys([]);
-        fetchGames(skip, fetchLimit, searchTitle, searchCreatedByUser, searchCreatedByCompany, sortParameters);
+        fetchGames(
+          skip,
+          fetchLimit,
+          searchTitle,
+          searchDateRange,
+          searchCreatedByUser,
+          searchCreatedByCompany,
+          sortParameters
+        );
       })
       .catch((error) => {
         message.error(error, 5);
@@ -82,7 +127,15 @@ export const GamesPage: React.FC = () => {
   const refresh = () => {
     let skip = getSkip(pagination);
     setSelectedRowKeys([]);
-    fetchGames(skip, fetchLimit, searchTitle, searchCreatedByUser, searchCreatedByCompany, sortParameters);
+    fetchGames(
+      skip,
+      fetchLimit,
+      searchTitle,
+      searchDateRange,
+      searchCreatedByUser,
+      searchCreatedByCompany,
+      sortParameters
+    );
   };
 
   const search = () => {
@@ -96,6 +149,7 @@ export const GamesPage: React.FC = () => {
       skip,
       fetchLimit,
       searchTitle,
+      searchDateRange,
       searchCreatedByUser,
       searchCreatedByCompany,
       sortParameters,
@@ -147,6 +201,10 @@ export const GamesPage: React.FC = () => {
             placeholder="Created by company"
             value={searchCreatedByCompany}
             onChange={(e) => setSearchCreatedByCompany(e.target.value === "" ? undefined : e.target.value)}
+          />
+          <DatePicker.RangePicker
+            placeholder={["released start", "released end"]}
+            onChange={(v) => setDateRange(v as Array<moment.Moment>)}
           />
           <Button icon={<SearchOutlined />} type="primary" loading={isGamesLoading} onClick={search}>
             Search

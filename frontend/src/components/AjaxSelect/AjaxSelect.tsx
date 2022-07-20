@@ -32,7 +32,7 @@ export const AjaxSelect: React.FC<Props> = ({ value = undefined, onChange, place
       if (currentValue === value) fetchData(value, callback);
     };
 
-    timeout = setTimeout(f, 300);
+    timeout = setTimeout(f, 500);
   };
 
   const handleSearch = (newValue: string) => {

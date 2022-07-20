@@ -60,6 +60,8 @@ export class GamesService {
     skip?: number,
     limit: number = 100,
     title?: string,
+    releasedStart?: string,
+    releasedEnd?: string,
     createdByUser?: string,
     createdByCompany?: string,
     sort?: string
@@ -71,6 +73,8 @@ export class GamesService {
         skip: skip,
         limit: limit,
         title: title,
+        released_start: releasedStart,
+        released_end: releasedEnd,
         created_by_user: createdByUser,
         created_by_company: createdByCompany,
         sort: sort,

@@ -57,6 +57,44 @@ async def get_multi(
     return users
 
 
+@router.get("/creation-statistics", response_model=list[schema.UserCreationStatistics])
+async def get_creation_statistics(
+    days: int,
+    current_superuser: User = Depends(get_current_superuser),
+    user_dao: UserDAO = Depends(),
+) -> list[dict]:
+    """Statistics for user creation in last N days.
+
+    Args:
+        days (int): Amount of days.
+        current_superuser (User, optional): Current superuser.
+        user_dao (UserDAO, optional): User DAO.
+
+    Returns:
+        dict: User creation statistics.
+    """
+
+    return await user_dao.get_user_creation_statistics(days)
+
+
+@router.get("/role-statistics", response_model=list[schema.UserRoleStatistics])
+async def get_role_statistics(
+    current_superuser: User = Depends(get_current_superuser),
+    user_dao: UserDAO = Depends(),
+) -> list[dict]:
+    """Statistics for user roles.
+
+    Args:
+        current_superuser (User, optional): Current superuser.
+        user_dao (UserDAO, optional): User DAO.
+
+    Returns:
+        dict: User roles statistics.
+    """
+
+    return await user_dao.get_users_role_statistics()
+
+
 @router.get("/me", response_model=UserSchema)
 async def get_me(current_user: User = Depends(get_current_user)) -> User:
     """Get current user.

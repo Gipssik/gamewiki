@@ -35,9 +35,10 @@ async def get_multi(
         list[Game]: List of games.
     """
 
-    # TODO: Check if need to fix
     filters_dict = {
         "title": ("title__icontains", queries.title),
+        "released_start": ("released_at__gte", queries.released_start),
+        "released_end": ("released_at__lte", queries.released_end),
         "created_by_user": (
             "created_by_user__username__icontains",
             queries.created_by_user,
@@ -62,6 +63,23 @@ async def get_multi(
 
     response.headers["X-Total-Count"] = str(amount)
     return games
+
+
+@router.get(
+    "/popularity-statistics",
+    response_model=list[schema.GamePopulationStatistics],
+)
+async def get_popularity_statistics(game_dao: GameDAO = Depends()) -> list[dict]:
+    """Statistics for game popularity.
+
+    Args:
+        game_dao (GameDAO): Game DAO.
+
+    Returns:
+        Game: Statistics for game popularity.
+    """
+
+    return await game_dao.get_popularity_statistics()
 
 
 @router.get("/{game_id}", response_model=GameSchema)

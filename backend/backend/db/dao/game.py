@@ -1,6 +1,8 @@
 import logging
 from typing import Any
 
+from tortoise.functions import Coalesce, Sum
+
 from backend.db import models
 from backend.db.dao.base import BaseDAO
 from backend.exceptions import ObjectNotFoundException
@@ -112,3 +114,12 @@ class GameDAO(BaseDAO[models.Game]):
 
         logger.debug(f"Updated game {db_game.id}")
         return db_game
+
+    async def get_popularity_statistics(self) -> list[dict]:
+        data = (
+            await self.model.all()
+            .annotate(sales_sum=Coalesce(Sum("sales__amount"), 0))
+            .order_by("sales_sum")
+            .values("title", "sales_sum")
+        )
+        return data
