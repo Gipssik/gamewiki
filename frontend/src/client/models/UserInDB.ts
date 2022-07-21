@@ -10,4 +10,3 @@ export type UserInDB = {
     is_primary: boolean;
     created_at: string;
 };
-

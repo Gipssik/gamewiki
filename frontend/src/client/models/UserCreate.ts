@@ -8,4 +8,3 @@ export type UserCreate = {
     is_superuser?: boolean;
     password: string;
 };
-

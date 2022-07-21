@@ -2,8 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type SaleCreate = {
+export type SalePopularityStatistics = {
+    game: string;
+    platform: string;
     amount: number;
-    game_id: string;
-    platform_id: string;
 };

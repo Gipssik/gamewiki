@@ -13,4 +13,3 @@ export type Company = {
     created_by_user?: UserInDB;
     games?: Array<GameInDB>;
 };
-

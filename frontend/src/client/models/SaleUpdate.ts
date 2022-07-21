@@ -7,4 +7,3 @@ export type SaleUpdate = {
     game_id?: string;
     platform_id?: string;
 };
-

@@ -8,6 +8,7 @@ import type { SaleUpdate } from "../models/SaleUpdate";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request, requestWithHeaders } from "../core/request";
+import { SalePopularityStatistics } from "../models/SalePopularityStatistics";
 
 export class SalesService {
   /**
@@ -79,6 +80,25 @@ export class SalesService {
         422: `Validation Error`,
       },
       responseHeader: "x-total-count",
+    });
+  }
+
+  /**
+   * Get Popularity Statistics
+   * Statistics for game-platform sale popularity.
+   *
+   * Args:
+   * sale_dao (SaleDAO): SaleDAO
+   *
+   * Returns:
+   * Sale: Statistics for game-platform sale popularity.
+   * @returns SalePopularityStatistics Successful Response
+   * @throws ApiError
+   */
+  public static getPopularityStatistics(): CancelablePromise<Array<SalePopularityStatistics>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/sales/popularity-statistics",
     });
   }
 

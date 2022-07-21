@@ -24,3 +24,7 @@ export { GamePage } from "./GamePage";
 export { SalesPage } from "./SalesPage";
 export { CreateSalePage } from "./CreateSalePage";
 export { EditSalePage } from "./EditSalePage";
+export { UsersStatistics } from "./UsersStatistics";
+export { CompaniesStatistics } from "./CompaniesStatistics";
+export { GamesStatistics } from "./GamesStatistics";
+export { SalesStatistics } from "./SalesStatistics";

@@ -1,9 +1,10 @@
-import { DeleteOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
+import { BarChartOutlined, DeleteOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
 import { Button, Input, message, Select, Space, Table } from "antd";
 import modal from "antd/lib/modal";
 import type { TablePaginationConfig } from "antd/lib/table";
 import type { FilterValue, SorterResult } from "antd/lib/table/interface";
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { User, UsersService } from "../../client";
 import { UsersColumns } from "../../columns";
 import { Container, Panel, Title } from "../../components";
@@ -171,6 +172,11 @@ const UsersPage: React.FC = () => {
           >
             Delete
           </Button>
+          <Link to={"/users/statistics"}>
+            <Button icon={<BarChartOutlined />} type="dashed">
+              Statistics
+            </Button>
+          </Link>
         </Space>
       </Panel>
 

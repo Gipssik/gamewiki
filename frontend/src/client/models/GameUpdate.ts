@@ -9,4 +9,3 @@ export type GameUpdate = {
     genres?: Array<string>;
     created_by_company_id?: string;
 };
-

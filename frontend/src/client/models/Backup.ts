@@ -11,4 +11,3 @@ export type Backup = {
     created_at: string;
     created_by_user?: UserInDB;
 };
-

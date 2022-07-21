@@ -8,6 +8,8 @@ import type { CompanyUpdate } from "../models/CompanyUpdate";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request, requestWithHeaders } from "../core/request";
+import { CompanyGamesStatistics } from "../models/CompanyGamesStatistics";
+import { CompanyFoundationStatistics } from "../models/CompanyFoundationStatistics";
 
 export class CompaniesService {
   /**
@@ -74,6 +76,44 @@ export class CompaniesService {
         422: `Validation Error`,
       },
       responseHeader: "x-total-count",
+    });
+  }
+
+  /**
+   * Get Foundation Statistics
+   * Statistics for companies foundation.
+   *
+   * Args:
+   * company_dao (CompanyDAO, optional): Company DAO.
+   *
+   * Returns:
+   * dict: Statistics for companies foundation.
+   * @returns CompanyFoundationStatistics Successful Response
+   * @throws ApiError
+   */
+  public static getFoundationStatistics(): CancelablePromise<Array<CompanyFoundationStatistics>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/companies/foundation-statistics",
+    });
+  }
+
+  /**
+   * Get Games Statistics
+   * Statistics for companies' games.
+   *
+   * Args:
+   * company_dao (CompanyDAO, optional): Company DAO.
+   *
+   * Returns:
+   * dict: Statistics for companies' games.
+   * @returns CompanyGamesStatistics Successful Response
+   * @throws ApiError
+   */
+  public static getGamesStatistics(): CancelablePromise<Array<CompanyGamesStatistics>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/companies/games-statistics",
     });
   }
 

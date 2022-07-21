@@ -8,4 +8,3 @@ export type GameInDB = {
     released_at: string;
     created_at: string;
 };
-

@@ -23,4 +23,3 @@ export type User = {
     created_sales?: Array<Sale>;
     created_backups?: Array<BackupInDB>;
 };
-

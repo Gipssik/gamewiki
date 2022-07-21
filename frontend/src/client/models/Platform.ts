@@ -13,4 +13,3 @@ export type Platform = {
     games?: Array<GameInDB>;
     sales?: Array<Sale>;
 };
-

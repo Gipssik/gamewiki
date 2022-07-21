@@ -11,4 +11,3 @@ export type Genre = {
     created_by_user?: UserInDB;
     games?: Array<GameInDB>;
 };
-

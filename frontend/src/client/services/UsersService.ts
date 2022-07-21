@@ -8,6 +8,8 @@ import type { UserUpdate } from "../models/UserUpdate";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request, requestWithHeaders } from "../core/request";
+import { UserCreationStatistics } from "../models/UserCreationStatistics";
+import { UserRoleStatistics } from "../models/UserRoleStatistics";
 
 export class UsersService {
   /**
@@ -84,6 +86,54 @@ export class UsersService {
         422: `Validation Error`,
       },
       responseHeader: "x-total-count",
+    });
+  }
+
+  /**
+   * Get Creation Statistics
+   * Statistics for user creation in last N days.
+   *
+   * Args:
+   * days (int): Amount of days.
+   * current_superuser (User, optional): Current superuser.
+   * user_dao (UserDAO, optional): User DAO.
+   *
+   * Returns:
+   * dict: User creation statistics.
+   * @param days
+   * @returns UserCreationStatistics Successful Response
+   * @throws ApiError
+   */
+  public static getCreationStatistics(days: number): CancelablePromise<Array<UserCreationStatistics>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/users/creation-statistics",
+      query: {
+        days: days,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+
+  /**
+   * Get Role Statistics
+   * Statistics for user roles.
+   *
+   * Args:
+   * current_superuser (User, optional): Current superuser.
+   * user_dao (UserDAO, optional): User DAO.
+   *
+   * Returns:
+   * dict: User roles statistics.
+   * @returns UserRoleStatistics Successful Response
+   * @throws ApiError
+   */
+  public static getRoleStatistics(): CancelablePromise<Array<UserRoleStatistics>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/users/role-statistics",
     });
   }
 

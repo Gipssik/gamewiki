@@ -8,6 +8,7 @@ import type { GameUpdate } from "../models/GameUpdate";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request, requestWithHeaders } from "../core/request";
+import { GamePopulationStatistics } from "../models/GamePopulationStatistics";
 
 export class GamesService {
   /**
@@ -83,6 +84,25 @@ export class GamesService {
         422: `Validation Error`,
       },
       responseHeader: "x-total-count",
+    });
+  }
+
+  /**
+   * Get Popularity Statistics
+   * Statistics for game popularity.
+   *
+   * Args:
+   * game_dao (GameDAO): Game DAO.
+   *
+   * Returns:
+   * Game: Statistics for game popularity.
+   * @returns GamePopulationStatistics Successful Response
+   * @throws ApiError
+   */
+  public static getPopularityStatistics(): CancelablePromise<Array<GamePopulationStatistics>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/games/popularity-statistics",
     });
   }
 

@@ -1,4 +1,11 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
+import {
+  BarChartOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  SyncOutlined,
+} from "@ant-design/icons";
 import { Button, Input, message, Space, Table, TablePaginationConfig } from "antd";
 import { FilterValue, SorterResult } from "antd/lib/table/interface";
 import React, { useEffect, useState } from "react";
@@ -144,30 +151,37 @@ export const SalesPage: React.FC = () => {
             Search
           </Button>
         </Space>
-        {me && me.is_superuser ? (
-          <Space>
-            <span>{hasSelected ? `Selected ${selectedRowKeys.length} items` : ""}</span>
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              onClick={() => {
-                modal.confirm({
-                  title: "Are you sure you want to delete these sales?",
-                  onOk: deleteOnButtonClick,
-                });
-              }}
-              disabled={!hasSelected}
-              loading={isSalesLoading}
-            >
-              Delete
-            </Button>
-            <Link to={"/sales/create"}>
-              <Button icon={<PlusOutlined />} type="primary">
-                Create
+        <Space>
+          {me && me.is_superuser ? (
+            <>
+              <span>{hasSelected ? `Selected ${selectedRowKeys.length} items` : ""}</span>
+              <Button
+                icon={<DeleteOutlined />}
+                danger
+                onClick={() => {
+                  modal.confirm({
+                    title: "Are you sure you want to delete these sales?",
+                    onOk: deleteOnButtonClick,
+                  });
+                }}
+                disabled={!hasSelected}
+                loading={isSalesLoading}
+              >
+                Delete
               </Button>
-            </Link>
-          </Space>
-        ) : null}
+              <Link to={"/sales/create"}>
+                <Button icon={<PlusOutlined />} type="primary">
+                  Create
+                </Button>
+              </Link>
+            </>
+          ) : null}
+          <Link to={"/sales/statistics"}>
+            <Button icon={<BarChartOutlined />} type="dashed">
+              Statistics
+            </Button>
+          </Link>
+        </Space>
       </Panel>
       <Table
         dataSource={sales || undefined}

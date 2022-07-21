@@ -6,4 +6,3 @@ export type CompanyUpdate = {
     title?: string;
     founded_at?: string;
 };
-

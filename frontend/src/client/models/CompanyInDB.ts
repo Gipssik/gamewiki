@@ -8,4 +8,3 @@ export type CompanyInDB = {
     founded_at: string;
     created_at: string;
 };
-

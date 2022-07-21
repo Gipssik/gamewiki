@@ -8,4 +8,3 @@ export type BackupInDB = {
     url: string;
     created_at: string;
 };
-

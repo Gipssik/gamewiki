@@ -6,4 +6,3 @@ export type GenreInDB = {
     id: string;
     title: string;
 };
-

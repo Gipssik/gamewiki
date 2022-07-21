@@ -1,6 +1,8 @@
+import datetime
 import logging
 from typing import Any
 
+from dateutil.rrule import DAILY, rrule
 from pypika import CustomFunction, Interval, Parameter
 from tortoise.expressions import Q
 from tortoise.functions import Count, Function
@@ -166,9 +168,18 @@ class UserDAO(BaseDAO[models.User]):
             )
             .annotate(date=TruncDate("created_at"), users=Count("id"))
             .group_by("date")
+            .order_by("date")
             .values("date", "users")
         )
-        return data
+        date_list = [d["date"] for d in data]
+        start_date = datetime.date.today() - datetime.timedelta(days=days)
+        end_date = datetime.date.today()
+        datetimes = rrule(freq=DAILY, dtstart=start_date, until=end_date)
+        dates = map(lambda x: x.date(), datetimes)
+        new_dates = set(dates) - set(date_list)
+        for d in new_dates:
+            data.append({"date": d, "users": 0})
+        return sorted(data, key=lambda x: x["date"])
 
     async def get_users_role_statistics(self) -> list[dict]:
         data = (

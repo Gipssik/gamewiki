@@ -13,4 +13,3 @@ export type Sale = {
     platform: PlatformInDB;
     created_by_user?: UserInDB;
 };
-

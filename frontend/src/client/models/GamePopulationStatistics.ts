@@ -2,7 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type CompanyCreate = {
+export type GamePopulationStatistics = {
     title: string;
-    founded_at: string;
+    sales_sum: number;
 };

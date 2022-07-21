@@ -8,4 +8,3 @@ export type UserUpdate = {
     is_superuser?: boolean;
     password?: string;
 };
-
