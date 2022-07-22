@@ -20,6 +20,7 @@ export const store = configureStore({
     games: gamesReducer,
     sales: salesReducer,
   },
+  devTools: false,
 });
 
 export type RootState = ReturnType<typeof store.getState>;

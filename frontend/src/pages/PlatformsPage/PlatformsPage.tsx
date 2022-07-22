@@ -240,9 +240,7 @@ export const PlatformsPage: React.FC = () => {
           size="small"
           loading={isPlatformsLoading}
           pagination={pagination}
-          rowSelection={
-            me && me.is_superuser ? { type: "checkbox", onChange: setSelectedRowKeys, selectedRowKeys } : undefined
-          }
+          rowSelection={{ type: "checkbox", onChange: setSelectedRowKeys, selectedRowKeys }}
           onChange={handleTableChange}
         />
       </Container>

@@ -323,9 +323,7 @@ export const GamesPage: React.FC = () => {
           size="small"
           loading={isGamesLoading}
           pagination={pagination}
-          rowSelection={
-            me && me.is_superuser ? { type: "checkbox", onChange: setSelectedRowKeys, selectedRowKeys } : undefined
-          }
+          rowSelection={{ type: "checkbox", onChange: setSelectedRowKeys, selectedRowKeys }}
           onChange={handleTableChange}
         />
       </Container>
