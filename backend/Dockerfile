@@ -2,7 +2,7 @@ FROM python:3.10.3
 
 
 
-RUN pip install poetry==1.1.13
+RUN pip install poetry==1.1.14
 RUN apt-get update &&  \
     apt-get install --no-install-recommends --assume-yes postgresql-client
 

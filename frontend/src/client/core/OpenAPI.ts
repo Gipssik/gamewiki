@@ -21,7 +21,7 @@ export type OpenAPIConfig = {
 const getAccessToken = async () => localStorage.getItem('accessToken') || ''
 
 export const OpenAPI: OpenAPIConfig = {
-    BASE: process.env.REACT_APP_BACKEND_HOST || '',
+    BASE: process.env.REACT_APP_BACKEND_HOST || 'http://localhost:8000',
     VERSION: '0.1.0',
     WITH_CREDENTIALS: true,
     CREDENTIALS: 'include',

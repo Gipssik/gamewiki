@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    image: backend:${BACKEND_VERSION:-latest}
+    image: gamewiki:${BACKEND_VERSION:-latest}
     restart: always
     ports:
     - "8000:8000"
@@ -33,14 +33,14 @@ services:
       POSTGRES_USER: "backend"
       POSTGRES_DB: "backend"
     volumes:
-    - backend-db-data:/var/lib/postgresql/data
+    - gamewiki-db-data:/var/lib/postgresql/data
     restart: always
     healthcheck:
       test:
       - CMD
       - pg_isready
       - -U
-      - backend
+      - gamewiki
       interval: 2s
       timeout: 3s
       retries: 40
@@ -64,5 +64,5 @@ services:
         max-size: "10m"
 
 volumes:
-  backend-db-data:
-    name: backend-db-data
+  gamewiki-db-data:
+    name: gamewiki-db-data
